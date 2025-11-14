@@ -14,7 +14,19 @@ app.secret_key = os.environ.get('SESSION_SECRET', 'dev-secret-key-change-in-prod
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Datenbank-Konfiguration
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+db_uri = os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_URI")
+
+print("DEBUG DATABASE_URL:", os.environ.get("DATABASE_URL"))
+print("DEBUG SQLALCHEMY_DATABASE_URI env:", os.environ.get("SQLALCHEMY_DATABASE_URI"))
+print("DEBUG final DB URI:", db_uri)
+
+if not db_uri:
+    raise RuntimeError(
+        "Keine DB-URL gefunden. Bitte in Render DATABASE_URL "
+        "oder SQLALCHEMY_DATABASE_URI setzen."
+    )
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
