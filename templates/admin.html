@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - SportOase{% endblock %}
+
+{% block content %}
+<div class="admin-panel">
+    <h2>Admin-Bereich</h2>
+    
+    <!-- Neue Lehrkraft anlegen -->
+    <section class="admin-section">
+        <h3>Neue Lehrkraft anlegen</h3>
+        <form method="POST" class="admin-form">
+            <div class="form-group">
+                <label for="email">E-Mail:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Temporäres Passwort:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Lehrkraft anlegen</button>
+        </form>
+    </section>
+    
+    <!-- Liste aller Benutzer -->
+    <section class="admin-section">
+        <h3>Alle Benutzer</h3>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>E-Mail</th>
+                    <th>Rolle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        {% if user.role == 'admin' %}
+                        <span class="role-badge admin">Admin</span>
+                        {% else %}
+                        <span class="role-badge teacher">Lehrkraft</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    
+    <!-- Buchungsübersicht -->
+    <section class="admin-section">
+        <h3>Alle Buchungen</h3>
+        
+        <div class="filter-form">
+            <form method="GET">
+                <label for="filter_date">Nach Datum filtern:</label>
+                <input type="date" id="filter_date" name="filter_date" value="{{ filter_date }}">
+                <button type="submit" class="btn btn-secondary">Filtern</button>
+                {% if filter_date %}
+                <a href="{{ url_for('admin') }}" class="btn btn-secondary">Filter zurücksetzen</a>
+                {% endif %}
+            </form>
+        </div>
+        
+        <table class="admin-table bookings-table">
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Stunde</th>
+                    <th>Angebot</th>
+                    <th>Lehrkraft</th>
+                    <th>Schüler</th>
+                    <th>Aktion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td>{{ booking.date }}</td>
+                    <td>{{ booking.period }}.</td>
+                    <td class="period-{{ booking.offer_type }}">
+                        {{ booking.offer_label }}
+                        <br><small>({{ booking.offer_type }})</small>
+                    </td>
+                    <td>
+                        <strong>{{ booking.teacher_name }}</strong><br>
+                        <small>Klasse: {{ booking.teacher_class }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ booking.student_count }} Schüler:</strong>
+                        <ul class="student-list">
+                            {% for student in booking.students %}
+                            <li>{{ student.name }} (Klasse {{ student.klasse }})</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_booking_route', booking_id=booking.id) }}" onsubmit="return confirm('Buchung wirklich löschen?');" style="display: inline;">
+                            <button type="submit" class="btn btn-delete">Löschen</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                
+                {% if not bookings %}
+                <tr>
+                    <td colspan="6" class="no-data">Keine Buchungen gefunden.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Buchung - SportOase{% endblock %}
+
+{% block content %}
+<div class="booking-form">
+    <h2>Neue Buchung</h2>
+    
+    <div class="booking-info">
+        <p><strong>Datum:</strong> {{ date_str }}</p>
+        <p><strong>Stunde:</strong> {{ period }}. Stunde ({{ period_time.start }} - {{ period_time.end }})</p>
+        <p><strong>Angebot:</strong> 
+            {% if period_info.type == 'fest' %}
+            <span class="period-fest">FEST: {{ period_info.label }}</span>
+            {% else %}
+            <span class="period-frei">FREI (Modulwahl möglich)</span>
+            {% endif %}
+        </p>
+        <p><strong>Verfügbare Plätze:</strong> {{ available_spots }} / 5</p>
+    </div>
+    
+    <form method="POST" id="bookingForm">
+        <div class="teacher-info-section">
+            <h3>Ihre Angaben</h3>
+            <div class="form-group">
+                <label for="teacher_name">Ihr Name:</label>
+                <input type="text" id="teacher_name" name="teacher_name" required placeholder="z.B. Max Mustermann">
+            </div>
+            
+            <div class="form-group">
+                <label for="teacher_class">Ihre Klasse:</label>
+                <input type="text" id="teacher_class" name="teacher_class" required placeholder="z.B. 5a">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="num_students">Anzahl Schüler (1-5):</label>
+            <select id="num_students" name="num_students" onchange="updateStudentFields()" required>
+                <option value="1">1 Schüler</option>
+                <option value="2">2 Schüler</option>
+                <option value="3">3 Schüler</option>
+                <option value="4">4 Schüler</option>
+                <option value="5">5 Schüler</option>
+            </select>
+        </div>
+        
+        <div id="studentFields">
+            <!-- Wird dynamisch mit JavaScript gefüllt -->
+        </div>
+        
+        {% if period_info.type == 'frei' %}
+        <div class="form-group">
+            <label for="module">Modul wählen:</label>
+            <select id="module" name="module" required>
+                <option value="">-- Bitte wählen --</option>
+                {% for module in free_modules %}
+                <option value="{{ module }}">{{ module }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Buchung abschließen</button>
+            <a href="{{ url_for('dashboard', date=date_str) }}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </form>
+</div>
+
+<script>
+function updateStudentFields() {
+    const numStudents = parseInt(document.getElementById('num_students').value);
+    const container = document.getElementById('studentFields');
+    container.innerHTML = '';
+    
+    for (let i = 0; i < numStudents; i++) {
+        const div = document.createElement('div');
+        div.className = 'student-entry';
+        div.innerHTML = `
+            <h4>Schüler ${i + 1}</h4>
+            <div class="form-group">
+                <label for="student_name_${i}">Name:</label>
+                <input type="text" id="student_name_${i}" name="student_name_${i}" required>
+            </div>
+            <div class="form-group">
+                <label for="student_class_${i}">Klasse:</label>
+                <input type="text" id="student_class_${i}" name="student_class_${i}" required>
+            </div>
+        `;
+        container.appendChild(div);
+    }
+}
+
+// Initialisiere mit 1 Schüler
+updateStudentFields();
+</script>
+{% endblock %}

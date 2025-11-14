@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Login - SportOase{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-box">
+        <h2>Anmeldung</h2>
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group">
+                <label for="email">E-Mail:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Passwort:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Anmelden</button>
+        </form>
+        
+        <div class="login-info">
+            <p><strong>Hinweis:</strong> Standard-Admin-Zugangsdaten:</p>
+            <p>E-Mail: admin@sportoase.de</p>
+            <p>Passwort: admin123</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SportOase Buchungssystem{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-title">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="SportOase Logo" class="logo">
+                    <h1>SportOase<br><span class="subtitle">KGS PATTENSEN</span></h1>
+                </div>
+                {% if session.user_id %}
+                <nav>
+                    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                    {% if session.user_role == 'admin' %}
+                    <a href="{{ url_for('admin') }}">Admin</a>
+                    {% endif %}
+                    <a href="{{ url_for('logout') }}">Logout</a>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="messages">
+                    {% for category, message in messages %}
+                        <div class="message message-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 SportOase Buchungssystem</p>
+        </div>
+    </footer>
+</body>
+</html>

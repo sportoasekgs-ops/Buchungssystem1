@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SportOase{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <h2>Buchungs-Dashboard</h2>
+    
+    <!-- Datumswahl -->
+    <div class="date-selector">
+        <form method="GET" action="{{ url_for('dashboard') }}">
+            <label for="date">Datum wählen:</label>
+            <input type="date" id="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()">
+        </form>
+    </div>
+    
+    <div class="selected-date-info">
+        <h3>{{ weekday }}, {{ selected_date.strftime('%d.%m.%Y') }}</h3>
+    </div>
+    
+    <!-- Wochenübersicht -->
+    <div class="week-overview">
+        <h3>Wochenplan-Übersicht</h3>
+        <table class="week-table">
+            <thead>
+                <tr>
+                    <th>Stunde</th>
+                    {% for day in week_overview %}
+                    <th>{{ day.name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for period in range(1, 7) %}
+                <tr>
+                    <td><strong>{{ period }}.</strong></td>
+                    {% for day in week_overview %}
+                    <td class="period-{{ day.schedule[period-1].type }}">
+                        {% if day.schedule[period-1].type == 'fest' %}
+                        <strong>FEST:</strong> {{ day.schedule[period-1].label }}
+                        {% else %}
+                        FREI
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Tagesplan mit Buchungsmöglichkeiten -->
+    <div class="day-schedule">
+        <h3>Buchungsmöglichkeiten für {{ weekday }}</h3>
+        
+        <table class="schedule-table">
+            <thead>
+                <tr>
+                    <th>Stunde</th>
+                    <th>Zeit</th>
+                    <th>Angebot</th>
+                    <th>Belegung</th>
+                    <th>Aktion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in schedule %}
+                <tr>
+                    <td><strong>{{ slot.period }}.</strong></td>
+                    <td>{{ slot.time }}</td>
+                    <td class="period-{{ slot.type }}">
+                        {% if slot.type == 'fest' %}
+                        <strong>FEST:</strong> {{ slot.label }}
+                        {% else %}
+                        <strong>FREI:</strong> Modulwahl möglich
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="capacity {% if slot.available == 0 %}full{% endif %}">
+                            {{ slot.booked }} / 5 belegt
+                            {% if slot.available > 0 %}
+                            ({{ slot.available }} frei)
+                            {% else %}
+                            (voll)
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if slot.can_book %}
+                        <a href="{{ url_for('book', date_str=selected_date, period=slot.period) }}" class="btn btn-primary">Buchen</a>
+                        {% elif slot.available == 0 %}
+                        <span class="disabled">Voll</span>
+                        {% elif slot.time_message %}
+                        <span class="disabled" title="{{ slot.time_message }}">Zu spät</span>
+                        {% else %}
+                        <span class="disabled">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
