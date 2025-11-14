@@ -1,7 +1,7 @@
 # Skript zur Initialisierung der Datenbank
 # Dieses Skript erstellt die Datenbank und legt einen Admin-Benutzer an
 
-from models import init_db, create_user, get_user_by_email
+from models import init_db, create_user, get_user_by_username
 
 def setup_database():
     """Initialisiert die Datenbank und erstellt einen Standard-Admin-Account"""
@@ -9,13 +9,13 @@ def setup_database():
     init_db()
     
     # Prüfe, ob bereits ein Admin existiert
-    admin = get_user_by_email('sportoase@sportoase.de')
+    admin = get_user_by_username('sportoase')
     if not admin:
         # Erstelle Standard-Admin
-        admin_id = create_user('sportoase@sportoase.de', 'mauro123', 'admin')
+        admin_id = create_user('sportoase', 'mauro123', 'admin', 'sportoase@sportoase.de')
         if admin_id:
             print(f"Admin-Account erstellt:")
-            print(f"  E-Mail: sportoase@sportoase.de")
+            print(f"  Benutzername: sportoase")
             print(f"  Passwort: mauro123")
         else:
             print("Admin-Account konnte nicht erstellt werden.")

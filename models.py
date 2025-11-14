@@ -22,7 +22,8 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT,
             password_hash TEXT NOT NULL,
             role TEXT NOT NULL CHECK(role IN ('teacher', 'admin'))
         )
@@ -57,12 +58,18 @@ def init_db():
     except sqlite3.OperationalError:
         pass  # Spalte existiert bereits
     
+    # Füge username-Spalte zu bestehenden Tabellen hinzu falls nötig
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN username TEXT UNIQUE")
+    except sqlite3.OperationalError:
+        pass  # Spalte existiert bereits
+    
     conn.commit()
     conn.close()
     print("Datenbank erfolgreich initialisiert!")
 
 # Funktionen für Benutzer-Verwaltung
-def create_user(email, password, role):
+def create_user(username, password, role, email=None):
     """Erstellt einen neuen Benutzer in der Datenbank"""
     conn = get_db()
     cursor = conn.cursor()
@@ -70,8 +77,8 @@ def create_user(email, password, role):
     
     try:
         cursor.execute(
-            'INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)',
-            (email, password_hash, role)
+            'INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)',
+            (username, email, password_hash, role)
         )
         conn.commit()
         user_id = cursor.lastrowid
@@ -79,7 +86,16 @@ def create_user(email, password, role):
         return user_id
     except sqlite3.IntegrityError:
         conn.close()
-        return None  # E-Mail existiert bereits
+        return None  # Benutzername existiert bereits
+
+def get_user_by_username(username):
+    """Sucht einen Benutzer anhand des Benutzernamens"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
 
 def get_user_by_email(email):
     """Sucht einen Benutzer anhand der E-Mail-Adresse"""
@@ -107,7 +123,7 @@ def get_all_users():
     """Gibt alle Benutzer zurück (für Admin-Ansicht)"""
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('SELECT id, email, role FROM users ORDER BY role, email')
+    cursor.execute('SELECT id, username, email, role FROM users ORDER BY role, username')
     users = cursor.fetchall()
     conn.close()
     return users

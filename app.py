@@ -105,21 +105,22 @@ def index():
 def login():
     """Login-Seite für Lehrkräfte und Admins"""
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
+        username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         
         # Suche Benutzer in Datenbank
-        user = get_user_by_email(email)
+        user = get_user_by_username(username)
         
         if user and verify_password(user, password):
             # Login erfolgreich - speichere in Session
             session['user_id'] = user['id']
-            session['user_email'] = user['email']
+            session['user_username'] = user['username']
+            session['user_email'] = user['email'] if user['email'] else ''
             session['user_role'] = user['role']
-            flash(f'Willkommen, {email}!', 'success')
+            flash(f'Willkommen, {username}!', 'success')
             return redirect(url_for('dashboard'))
         else:
-            flash('Ungültige E-Mail oder Passwort.', 'error')
+            flash('Ungültiger Benutzername oder Passwort.', 'error')
     
     return render_template('login.html')
 
@@ -395,17 +396,18 @@ def admin():
     
     if request.method == 'POST':
         # Neue Lehrkraft anlegen
-        email = request.form.get('email', '').strip()
+        username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
+        email = request.form.get('email', '').strip()
         
-        if not email or not password:
+        if not username or not password:
             flash('Bitte füllen Sie alle Felder aus.', 'error')
         else:
-            user_id = create_user(email, password, 'teacher')
+            user_id = create_user(username, password, 'teacher', email if email else None)
             if user_id:
-                flash(f'Lehrkraft {email} erfolgreich angelegt.', 'success')
+                flash(f'Lehrkraft {username} erfolgreich angelegt.', 'success')
             else:
-                flash('E-Mail-Adresse existiert bereits.', 'error')
+                flash('Benutzername existiert bereits.', 'error')
     
     # Hole alle Benutzer
     users = get_all_users()
