@@ -1,164 +1,150 @@
-# Datenbankmodelle für die SportOase-Anwendung
-# Diese Datei definiert die Struktur der Datenbank-Tabellen
+# Datenbankmodelle für die SportOase-Anwendung mit Flask-SQLAlchemy
+# Diese Datei definiert die Struktur der Datenbank-Tabellen für PostgreSQL
 
-import sqlite3
-import json
-from datetime import datetime
+import os
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from config import DATABASE_PATH
+from datetime import datetime
+import json
 
-def get_db():
-    """Erstellt eine Verbindung zur SQLite-Datenbank"""
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row  # Ermöglicht Zugriff auf Spalten per Name
-    return conn
+db = SQLAlchemy()
+
+class User(db.Model):
+    """Benutzer-Modell für Lehrkräfte und Admins"""
+    __tablename__ = 'users'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120))
+    password_hash = db.Column(db.String(256), nullable=False)
+    role = db.Column(db.String(20), nullable=False)
+    
+    bookings = db.relationship('Booking', backref='teacher', lazy=True)
+    
+    def set_password(self, password):
+        """Setzt das Passwort (gehasht)"""
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """Überprüft das Passwort"""
+        return check_password_hash(self.password_hash, password)
+    
+    def to_dict(self):
+        """Konvertiert User zu Dictionary für Kompatibilität"""
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'password_hash': self.password_hash,
+            'role': self.role
+        }
+
+class Booking(db.Model):
+    """Buchungs-Modell"""
+    __tablename__ = 'bookings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(10), nullable=False, index=True)
+    weekday = db.Column(db.String(3), nullable=False)
+    period = db.Column(db.Integer, nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    teacher_name = db.Column(db.String(100))
+    teacher_class = db.Column(db.String(50))
+    students_json = db.Column(db.Text, nullable=False)
+    offer_type = db.Column(db.String(10), nullable=False)
+    offer_label = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Konvertiert Booking zu Dictionary für Kompatibilität"""
+        return {
+            'id': self.id,
+            'date': self.date,
+            'weekday': self.weekday,
+            'period': self.period,
+            'teacher_id': self.teacher_id,
+            'teacher_name': self.teacher_name,
+            'teacher_class': self.teacher_class,
+            'students_json': self.students_json,
+            'offer_type': self.offer_type,
+            'offer_label': self.offer_label,
+            'created_at': self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
+            'teacher_email': self.teacher.email if self.teacher else None
+        }
+
+# Hilfsfunktionen für Kompatibilität mit dem alten Code
 
 def init_db():
     """Initialisiert die Datenbank und erstellt alle Tabellen"""
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Tabelle für Benutzer (Lehrkräfte und Admins)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL CHECK(role IN ('teacher', 'admin'))
-        )
-    ''')
-    
-    # Tabelle für Buchungen
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS bookings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            weekday TEXT NOT NULL,
-            period INTEGER NOT NULL CHECK(period >= 1 AND period <= 6),
-            teacher_id INTEGER NOT NULL,
-            teacher_name TEXT,
-            teacher_class TEXT,
-            students_json TEXT NOT NULL,
-            offer_type TEXT NOT NULL CHECK(offer_type IN ('fest', 'frei')),
-            offer_label TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY (teacher_id) REFERENCES users(id)
-        )
-    ''')
-    
-    # Migriere bestehende Tabelle falls nötig (füge neue Spalten hinzu)
-    try:
-        cursor.execute("ALTER TABLE bookings ADD COLUMN teacher_name TEXT")
-    except sqlite3.OperationalError:
-        pass  # Spalte existiert bereits
-    
-    try:
-        cursor.execute("ALTER TABLE bookings ADD COLUMN teacher_class TEXT")
-    except sqlite3.OperationalError:
-        pass  # Spalte existiert bereits
-    
-    # Füge username-Spalte zu bestehenden Tabellen hinzu falls nötig
-    try:
-        cursor.execute("ALTER TABLE users ADD COLUMN username TEXT UNIQUE")
-    except sqlite3.OperationalError:
-        pass  # Spalte existiert bereits
-    
-    conn.commit()
-    conn.close()
+    db.create_all()
     print("Datenbank erfolgreich initialisiert!")
 
-# Funktionen für Benutzer-Verwaltung
 def create_user(username, password, role, email=None):
     """Erstellt einen neuen Benutzer in der Datenbank"""
-    conn = get_db()
-    cursor = conn.cursor()
-    password_hash = generate_password_hash(password)
-    
     try:
-        cursor.execute(
-            'INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)',
-            (username, email, password_hash, role)
-        )
-        conn.commit()
-        user_id = cursor.lastrowid
-        conn.close()
-        return user_id
-    except sqlite3.IntegrityError:
-        conn.close()
-        return None  # Benutzername existiert bereits
+        user = User(username=username, email=email, role=role)
+        user.set_password(password)
+        db.session.add(user)
+        db.session.commit()
+        return user.id
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Erstellen des Benutzers: {e}")
+        return None
 
 def get_user_by_username(username):
     """Sucht einen Benutzer anhand des Benutzernamens"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
-    user = cursor.fetchone()
-    conn.close()
-    return user
+    user = User.query.filter_by(username=username).first()
+    return user.to_dict() if user else None
 
 def get_user_by_email(email):
     """Sucht einen Benutzer anhand der E-Mail-Adresse"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
-    user = cursor.fetchone()
-    conn.close()
-    return user
+    user = User.query.filter_by(email=email).first()
+    return user.to_dict() if user else None
 
 def get_user_by_id(user_id):
     """Sucht einen Benutzer anhand der ID"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
-    user = cursor.fetchone()
-    conn.close()
-    return user
+    user = User.query.get(user_id)
+    return user.to_dict() if user else None
 
-def verify_password(user, password):
+def verify_password(user_dict, password):
     """Überprüft, ob das eingegebene Passwort korrekt ist"""
-    return check_password_hash(user['password_hash'], password)
+    user = User.query.get(user_dict['id'])
+    return user.check_password(password) if user else False
 
 def get_all_users():
     """Gibt alle Benutzer zurück (für Admin-Ansicht)"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, username, email, role FROM users ORDER BY role, username')
-    users = cursor.fetchall()
-    conn.close()
-    return users
+    users = User.query.order_by(User.role, User.username).all()
+    return [u.to_dict() for u in users]
 
-# Funktionen für Buchungs-Verwaltung
 def create_booking(date, weekday, period, teacher_id, students, offer_type, offer_label, teacher_name=None, teacher_class=None):
     """Erstellt eine neue Buchung in der Datenbank"""
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    students_json = json.dumps(students, ensure_ascii=False)
-    created_at = datetime.now().isoformat()
-    
-    cursor.execute('''
-        INSERT INTO bookings (date, weekday, period, teacher_id, teacher_name, teacher_class, students_json, offer_type, offer_label, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (date, weekday, period, teacher_id, teacher_name, teacher_class, students_json, offer_type, offer_label, created_at))
-    
-    conn.commit()
-    booking_id = cursor.lastrowid
-    conn.close()
-    return booking_id
+    try:
+        students_json = json.dumps(students, ensure_ascii=False)
+        booking = Booking(
+            date=date,
+            weekday=weekday,
+            period=period,
+            teacher_id=teacher_id,
+            teacher_name=teacher_name,
+            teacher_class=teacher_class,
+            students_json=students_json,
+            offer_type=offer_type,
+            offer_label=offer_label,
+            created_at=datetime.now()
+        )
+        db.session.add(booking)
+        db.session.commit()
+        return booking.id
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Erstellen der Buchung: {e}")
+        return None
 
 def get_bookings_for_date_period(date, period):
     """Gibt alle Buchungen für ein bestimmtes Datum und Stunde zurück"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT * FROM bookings 
-        WHERE date = ? AND period = ?
-        ORDER BY created_at
-    ''', (date, period))
-    bookings = cursor.fetchall()
-    conn.close()
-    return bookings
+    bookings = Booking.query.filter_by(date=date, period=period).order_by(Booking.created_at).all()
+    return [b.to_dict() for b in bookings]
 
 def count_students_for_period(date, period):
     """Zählt die Gesamtzahl der Schüler für eine bestimmte Stunde"""
@@ -171,87 +157,59 @@ def count_students_for_period(date, period):
 
 def get_all_bookings():
     """Gibt alle Buchungen zurück (für Admin-Ansicht)"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT b.*, u.email as teacher_email 
-        FROM bookings b
-        JOIN users u ON b.teacher_id = u.id
-        ORDER BY b.date DESC, b.period
-    ''')
-    bookings = cursor.fetchall()
-    conn.close()
-    return bookings
+    bookings = Booking.query.order_by(Booking.date.desc(), Booking.period).all()
+    return [b.to_dict() for b in bookings]
 
 def get_bookings_by_date(date):
     """Gibt alle Buchungen für ein bestimmtes Datum zurück"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT b.*, u.email as teacher_email 
-        FROM bookings b
-        JOIN users u ON b.teacher_id = u.id
-        WHERE b.date = ?
-        ORDER BY b.period
-    ''', (date,))
-    bookings = cursor.fetchall()
-    conn.close()
-    return bookings
+    bookings = Booking.query.filter_by(date=date).order_by(Booking.period).all()
+    return [b.to_dict() for b in bookings]
 
 def get_bookings_for_week(start_date, end_date):
     """Gibt alle Buchungen für eine Woche zurück"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT b.*, u.email as teacher_email 
-        FROM bookings b
-        JOIN users u ON b.teacher_id = u.id
-        WHERE b.date >= ? AND b.date <= ?
-        ORDER BY b.date, b.period
-    ''', (start_date, end_date))
-    bookings = cursor.fetchall()
-    conn.close()
-    return bookings
+    bookings = Booking.query.filter(Booking.date >= start_date, Booking.date <= end_date).order_by(Booking.date, Booking.period).all()
+    return [b.to_dict() for b in bookings]
 
 def get_booking_by_id(booking_id):
     """Gibt eine einzelne Buchung anhand der ID zurück"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT b.*, u.email as teacher_email 
-        FROM bookings b
-        JOIN users u ON b.teacher_id = u.id
-        WHERE b.id = ?
-    ''', (booking_id,))
-    booking = cursor.fetchone()
-    conn.close()
-    return booking
+    booking = Booking.query.get(booking_id)
+    return booking.to_dict() if booking else None
 
 def update_booking(booking_id, date, weekday, period, teacher_id, students, offer_type, offer_label, teacher_name=None, teacher_class=None):
     """Aktualisiert eine bestehende Buchung in der Datenbank"""
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    students_json = json.dumps(students, ensure_ascii=False)
-    
-    cursor.execute('''
-        UPDATE bookings 
-        SET date = ?, weekday = ?, period = ?, teacher_id = ?, teacher_name = ?, teacher_class = ?, 
-            students_json = ?, offer_type = ?, offer_label = ?
-        WHERE id = ?
-    ''', (date, weekday, period, teacher_id, teacher_name, teacher_class, students_json, offer_type, offer_label, booking_id))
-    
-    conn.commit()
-    affected = cursor.rowcount
-    conn.close()
-    return affected > 0
+    try:
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            return False
+        
+        booking.date = date
+        booking.weekday = weekday
+        booking.period = period
+        booking.teacher_id = teacher_id
+        booking.teacher_name = teacher_name
+        booking.teacher_class = teacher_class
+        booking.students_json = json.dumps(students, ensure_ascii=False)
+        booking.offer_type = offer_type
+        booking.offer_label = offer_label
+        
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Aktualisieren der Buchung: {e}")
+        return False
 
 def delete_booking(booking_id):
     """Löscht eine Buchung aus der Datenbank"""
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM bookings WHERE id = ?', (booking_id,))
-    conn.commit()
-    affected = cursor.rowcount
-    conn.close()
-    return affected > 0
+    try:
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            return False
+        
+        db.session.delete(booking)
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Löschen der Buchung: {e}")
+        return False

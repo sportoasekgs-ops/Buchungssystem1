@@ -3,17 +3,41 @@
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from datetime import datetime, timedelta, date
+from werkzeug.middleware.proxy_fix import ProxyFix
 import pytz
 import json
-
-# Importiere unsere eigenen Module
-from config import *
-from models import *
-from email_service import send_booking_notification
+import os
 
 # Flask-App erstellen
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
+app.secret_key = os.environ.get('SESSION_SECRET', 'dev-secret-key-change-in-production')
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Datenbank-Konfiguration
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Importiere Modelle und initialisiere Datenbank
+from models import (
+    db, init_db, create_user, get_user_by_username, get_user_by_email, 
+    get_user_by_id, verify_password, get_all_users, create_booking,
+    get_bookings_for_date_period, count_students_for_period, get_all_bookings,
+    get_bookings_by_date, get_bookings_for_week, get_booking_by_id,
+    update_booking, delete_booking
+)
+from config import *
+from email_service import send_booking_notification
+
+# Initialisiere SQLAlchemy mit der App
+db.init_app(app)
+
+# Erstelle alle Tabellen beim Start
+with app.app_context():
+    init_db()
 
 # Hilfsfunktion: Zeitzone Europe/Berlin
 def get_berlin_tz():
@@ -723,7 +747,5 @@ def delete_booking_route(booking_id):
     return redirect(url_for('admin'))
 
 if __name__ == '__main__':
-    # Stelle sicher, dass die Datenbank initialisiert ist
-    init_db()
     # Starte die Anwendung
     app.run(host='0.0.0.0', port=5000, debug=True)

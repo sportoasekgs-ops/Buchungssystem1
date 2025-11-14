@@ -61,10 +61,10 @@ SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
 SMTP_USER = os.environ.get('SMTP_USER', '')
 SMTP_PASS = os.environ.get('SMTP_PASS', '')
 SMTP_FROM = os.environ.get('SMTP_FROM', 'sportoase@school.de')
-ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@school.de')
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'sportoase.kg@gmail.com')
 
 # Flask Session Secret (aus Umgebungsvariable)
 SECRET_KEY = os.environ.get('SESSION_SECRET', 'dev-secret-key-change-in-production')
 
-# Datenbank-Pfad
-DATABASE_PATH = 'sportoase.db'
+# Datenbank-Konfiguration (PostgreSQL)
+DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://localhost/sportoase')
