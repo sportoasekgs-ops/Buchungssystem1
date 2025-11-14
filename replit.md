@@ -46,13 +46,21 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Storage
 
-**Database**: SQLite (`sportoase.db`)
+**Database**: PostgreSQL (Neon-backed via Replit)
+
+**ORM**: Flask-SQLAlchemy 3.1.1
+
+**Architecture**:
+- `database.py`: Central SQLAlchemy instance shared across the application
+- `models.py`: ORM model definitions (User, Booking) and helper functions
+- `db_setup.py`: Explicit database initialization and admin account creation
 
 **Schema Design**:
 - `users` table: Stores user credentials and roles (teacher/admin)
   - Password hashing using `werkzeug.security`
-  - Email-based authentication
-  - Role column with CHECK constraint (teacher/admin only)
+  - Username-based authentication (switched from email)
+  - Role column for access control
+  - Email field for notifications
 
 - `bookings` table: Stores all booking records
   - Date and period (1-6) tracking
@@ -62,9 +70,10 @@ Preferred communication style: Simple, everyday language.
   - Created timestamp for audit trail
 
 **Data Model Rationale**: 
-- SQLite chosen for simplicity and Replit compatibility
+- PostgreSQL chosen for production deployment compatibility (Render)
+- SQLAlchemy ORM provides type safety and easier migrations
 - JSON storage for student data provides flexibility for variable numbers of students per booking
-- Row factory pattern enables dictionary-like access to query results
+- Centralized database instance prevents initialization conflicts
 
 ### Authentication & Authorization
 
@@ -86,13 +95,18 @@ Preferred communication style: Simple, everyday language.
 
 **SMTP Email Service**:
 - Environment variables for configuration: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `ADMIN_EMAIL`
+- Admin email: sportoase.kg@gmail.com (receives all booking notifications)
 - Graceful degradation: prints notifications to console when SMTP not configured
 - Purpose: Automated booking notifications to administrators and teachers
 
 **Python Packages**:
-- Flask: Web framework
-- pytz: Timezone handling (Europe/Berlin)
-- werkzeug: Password hashing utilities
+- Flask 3.1.2: Web framework
+- Flask-SQLAlchemy 3.1.1: ORM for PostgreSQL
+- psycopg2-binary 2.9.11: PostgreSQL adapter
+- gunicorn 23.0.0: Production WSGI server
+- pytz 2025.2: Timezone handling (Europe/Berlin)
+- werkzeug 3.1.3: Password hashing utilities
+- email-validator 2.3.0: Email validation
 - smtplib & email.mime: Email functionality (standard library)
 
 **Configuration**:
@@ -100,7 +114,52 @@ Preferred communication style: Simple, everyday language.
 - Environment-based SMTP configuration for deployment flexibility
 - Default admin credentials created during database initialization
 
+### Deployment
+
+**Platform**: Render (https://render.com)
+
+**Database**: PostgreSQL on Render (free tier, 90-day expiration)
+
+**Key Files**:
+- `requirements.txt`: Python dependencies for deployment
+- `DEPLOYMENT.md`: Complete deployment guide for Render
+- `db_setup.py`: Database initialization script (MUST be run after first deploy)
+
+**Environment Variables Required**:
+- `DATABASE_URL`: PostgreSQL connection string (from Render)
+- `SESSION_SECRET`: Random secret for Flask sessions
+- `ADMIN_EMAIL`: sportoase.kg@gmail.com (for booking notifications)
+- Optional SMTP settings for email notifications
+
+**Important Notes**:
+- Schema is NOT created automatically - run `python db_setup.py` after deployment
+- Default admin account: username `sportoase`, password `mauro123`, email `sportoase.kg@gmail.com`
+- Change admin password after first login!
+
 ## Recent Changes
+
+- 2024-11-14: **Major Migration: SQLite → PostgreSQL**
+  - **Database Migration**: Migrated from SQLite to PostgreSQL for production deployment
+    - Created `database.py` with centralized SQLAlchemy instance
+    - Refactored `models.py` to use Flask-SQLAlchemy ORM instead of raw SQL
+    - Converted all database queries from sqlite3 to SQLAlchemy
+    - Removed automatic schema creation from app startup
+    - Made schema creation explicit via `db_setup.py`
+  - **Email Configuration Update**:
+    - Changed admin email from `admin@school.de` to `sportoase.kg@gmail.com`
+    - Updated `config.py` ADMIN_EMAIL default
+    - Modified `db_setup.py` to create admin with correct email
+    - Updated existing admin user in database
+  - **Deployment Preparation**:
+    - Created `requirements.txt` with all dependencies
+    - Created comprehensive `DEPLOYMENT.md` with Render deployment guide
+    - Configured PostgreSQL connection with environment variables
+    - Added production-ready gunicorn configuration
+  - **Architecture Improvements**:
+    - Single SQLAlchemy instance shared across application
+    - Clean separation of database initialization from web app
+    - Production-safe schema management
+
 
 - 2024-11-14: Enhanced admin panel and week overview features
   - **Admin Booking Management**: Added full CRUD operations for bookings (create, edit, delete)

@@ -6,3 +6,9 @@
 [x] 6. Updated database schema to use username as primary identifier
 [x] 7. Fixed sqlite3.Row attribute error
 [x] 8. Verified login functionality works with username
+[x] 9. Migrated from SQLite to PostgreSQL for Render deployment
+[x] 10. Created centralized database architecture (database.py)
+[x] 11. Refactored models to use Flask-SQLAlchemy ORM
+[x] 12. Updated admin email to sportoase.kg@gmail.com
+[x] 13. Created deployment documentation for Render
+[x] 14. Created requirements.txt for production dependencies
