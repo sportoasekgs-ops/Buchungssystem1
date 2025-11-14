@@ -206,7 +206,8 @@ def dashboard():
             'teacher_name': booking_dict.get('teacher_name', 'N/A'),
             'teacher_class': booking_dict.get('teacher_class', 'N/A'),
             'student_count': len(students),
-            'students': students
+            'students': students,
+            'offer_label': booking_dict.get('offer_label', 'N/A')
         })
     
     week_overview = []
@@ -236,6 +237,7 @@ def dashboard():
             'weekday': wd,
             'name': weekday_names[i],
             'date': day_date_str,
+            'date_formatted': day_date.strftime('%d.%m.'),
             'schedule': day_schedule
         })
     

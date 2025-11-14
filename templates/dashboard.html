@@ -29,7 +29,7 @@
                     <th>
                         <div class="week-day-header">
                             <div class="day-name">{{ day.name }}</div>
-                            <div class="day-date">{{ day.date }}</div>
+                            <div class="day-date">{{ day.date_formatted }}</div>
                         </div>
                     </th>
                     {% endfor %}
@@ -53,7 +53,12 @@
                             <small>
                                 <strong>{{ day.schedule[period-1].total_students }} Schüler gebucht:</strong><br>
                                 {% for booking in day.schedule[period-1].bookings %}
-                                - {{ booking.teacher_name }} ({{ booking.student_count }} Schüler)<br>
+                                <div style="margin-top: 3px;">
+                                    <strong>{{ booking.offer_label }}</strong><br>
+                                    {% for student in booking.students %}
+                                    - {{ student.name }} (Kl. {{ student.klasse }})<br>
+                                    {% endfor %}
+                                </div>
                                 {% endfor %}
                             </small>
                         </div>
