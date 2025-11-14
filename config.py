@@ -32,7 +32,7 @@ FIXED_OFFERS = {
     },
     "Thu": {  # Donnerstag
         2: "Konflikt-Reset",
-        5: "Trampolin + Balance"
+        5: "Turnen + Balance"
     },
     "Fri": {  # Freitag
         2: "Atem & Reflexion",
