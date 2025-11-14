@@ -735,6 +735,23 @@ footer {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    body {
+        font-size: 14px;
+    }
+    
+    .container {
+        padding: 0 10px;
+    }
+    
+    main {
+        padding: 1rem 0;
+    }
+    
+    /* Navigation */
+    .top-nav {
+        padding: 0.8rem 0;
+    }
+    
     .top-nav nav {
         flex-direction: column;
         gap: 0.5rem;
@@ -742,36 +759,232 @@ footer {
     
     .top-nav nav a {
         text-align: center;
+        padding: 0.8rem;
+        font-size: 0.95rem;
+    }
+    
+    /* Login */
+    .login-container {
+        padding: 2rem 10px;
+    }
+    
+    .login-box {
+        padding: 2rem 1.5rem;
     }
     
     .login-logo img {
-        width: 120px;
-        height: 120px;
+        width: 100px;
+        height: 100px;
     }
     
-    .week-table,
-    .schedule-table,
-    .admin-table {
-        font-size: 0.85rem;
+    .login-box h2 {
+        font-size: 1.6rem;
+    }
+    
+    /* Dashboard */
+    h2 {
+        font-size: 1.5rem;
+    }
+    
+    h3 {
+        font-size: 1.3rem;
+    }
+    
+    .date-selector {
+        flex-direction: column;
+        padding: 1rem;
+        align-items: stretch;
+    }
+    
+    .date-selector label {
+        font-size: 1rem;
+    }
+    
+    .date-selector input {
+        width: 100%;
+        font-size: 1rem;
+        padding: 0.8rem;
+    }
+    
+    .selected-date-info h3 {
+        font-size: 1.4rem;
+        padding: 1rem;
+    }
+    
+    /* Wochenübersicht - Horizontal scrollbar für mobile */
+    .week-overview {
+        padding: 1rem;
+        margin-bottom: 2rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .week-overview h3 {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+    }
+    
+    .week-table {
+        min-width: 600px;
+        font-size: 0.75rem;
     }
     
     .week-table th,
-    .week-table td,
+    .week-table td {
+        padding: 0.6rem 0.4rem;
+    }
+    
+    .day-name {
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .day-date {
+        font-size: 0.75rem;
+    }
+    
+    .period-header {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .booking-info {
+        padding: 0.5rem;
+        font-size: 0.7rem;
+        margin-top: 0.5rem;
+    }
+    
+    .booking-info strong {
+        font-size: 0.75rem;
+    }
+    
+    /* Tagesplan - Auch mit Scroll */
+    .day-schedule {
+        padding: 1rem;
+        margin-top: 2rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .day-schedule h3 {
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+        white-space: normal;
+        word-break: break-word;
+    }
+    
+    .schedule-table {
+        min-width: 100%;
+        font-size: 0.85rem;
+    }
+    
     .schedule-table th,
-    .schedule-table td,
+    .schedule-table td {
+        padding: 0.8rem 0.5rem;
+    }
+    
+    .schedule-table th {
+        font-size: 0.85rem;
+    }
+    
+    .schedule-table td:first-child {
+        font-size: 1.1rem;
+    }
+    
+    .capacity {
+        font-size: 0.9rem;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    /* Buttons mobile-optimiert */
+    .btn {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.95rem;
+        width: 100%;
+        text-align: center;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn:hover {
+        transform: none;
+    }
+    
+    /* Admin */
+    .admin-panel {
+        padding: 0;
+    }
+    
+    .admin-section {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .admin-table {
+        font-size: 0.8rem;
+        overflow-x: auto;
+        display: block;
+    }
+    
     .admin-table th,
     .admin-table td {
-        padding: 0.5rem;
+        padding: 0.6rem 0.4rem;
     }
     
-    .btn {
-        display: block;
-        width: 100%;
-        margin-bottom: 0.5rem;
-        text-align: center;
-    }
-    
+    /* Forms */
     .form-actions {
         flex-direction: column;
+    }
+    
+    .form-group input,
+    .form-group select {
+        font-size: 16px; /* Verhindert Zoom auf iOS */
+    }
+    
+    /* Message anpassen */
+    .message {
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Scroll-Hinweis für Tabellen */
+    .week-overview::after,
+    .day-schedule::after {
+        content: "← Wischen für mehr →";
+        display: block;
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--gray);
+        margin-top: 0.5rem;
+        font-style: italic;
+    }
+}
+
+/* Extra kleine Geräte */
+@media (max-width: 480px) {
+    .selected-date-info h3 {
+        font-size: 1.2rem;
+        padding: 0.8rem;
+    }
+    
+    .week-table {
+        font-size: 0.7rem;
+    }
+    
+    .day-name {
+        font-size: 0.8rem;
+    }
+    
+    .day-date {
+        font-size: 0.65rem;
+    }
+    
+    .schedule-table {
+        font-size: 0.8rem;
+    }
+    
+    .login-box {
+        padding: 1.5rem 1rem;
     }
 }
