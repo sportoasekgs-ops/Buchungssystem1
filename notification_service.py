@@ -104,7 +104,11 @@ def create_booking_notification_email(booking_data):
         students = []
     
     students_count = len(students)
-    students_names = ', '.join(students) if students else 'Keine Schüler angegeben'
+    
+    if students:
+        students_names = ', '.join([f"{s['name']} ({s['klasse']})" for s in students])
+    else:
+        students_names = 'Keine Schüler angegeben'
     
     subject = f"📅 Neue Buchung: {offer_label} am {date}"
     
