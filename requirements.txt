@@ -34,3 +34,8 @@ google-api-python-client
 google-auth
 google-auth-oauthlib
 requests
+email_validator
+flask
+flask-sqlalchemy
+gunicorn
+psycopg2-binary
