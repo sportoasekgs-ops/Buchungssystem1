@@ -1,17 +1,36 @@
 # Haupt-Anwendungsdatei für die SportOase-Buchungssystem
 # Diese Datei enthält alle Routen (URLs) und die Logik der Webanwendung
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, Response, jsonify
 from datetime import datetime, timedelta, date
 from werkzeug.middleware.proxy_fix import ProxyFix
 import pytz
 import json
 import os
+import queue
+import threading
 
 # Flask-App erstellen
 app = Flask(__name__)
 app.secret_key = os.environ.get('SESSION_SECRET', 'dev-secret-key-change-in-production')
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# SSE Broadcaster für Echtzeit-Benachrichtigungen
+notification_subscribers = []
+subscribers_lock = threading.Lock()
+
+def broadcast_notification(notification_data):
+    """Sendet eine Benachrichtigung an alle verbundenen SSE-Clients"""
+    with subscribers_lock:
+        dead_queues = []
+        for q in notification_subscribers:
+            try:
+                q.put_nowait(notification_data)
+            except queue.Full:
+                dead_queues.append(q)
+        
+        for q in dead_queues:
+            notification_subscribers.remove(q)
 
 # CSRF-Token Generierung und Validierung
 import secrets
@@ -63,10 +82,14 @@ from models import (
     get_user_by_id, verify_password, get_all_users, create_booking,
     get_bookings_for_date_period, count_students_for_period, get_all_bookings,
     get_bookings_by_date, get_bookings_for_week, get_booking_by_id,
-    update_booking, delete_booking, User, Booking
+    update_booking, delete_booking, User, Booking,
+    create_notification, get_unread_notifications, get_recent_notifications,
+    mark_notification_as_read, mark_all_notifications_as_read,
+    get_unread_notification_count, get_booking_by_id
 )
 from config import *
 from email_service import send_booking_notification
+from notification_service import send_booking_notification as send_gmail_notification
 
 # Schema-Erstellung erfolgt explizit über db_setup.py
 # Nicht automatisch bei jedem Import!
@@ -521,9 +544,51 @@ def book(date_str, period):
                 'offer_type': period_info['type'],
                 'offer_label': offer_label,
                 'teacher_name': teacher_name,
-                'teacher_class': teacher_class
+                'teacher_class': teacher_class,
+                'students_json': json.dumps(students, ensure_ascii=False)
             }
             send_booking_notification(booking_data, session.get('user_email', 'system'))
+            
+            # Erstelle Notification in der Datenbank
+            notification_message = f"Neue Buchung: {teacher_name} hat {len(students)} Schüler für {offer_label} am {date_str} (Stunde {period}) angemeldet."
+            notification_id = create_notification(
+                booking_id=booking_id,
+                message=notification_message,
+                notification_type='new_booking',
+                recipient_role='admin',
+                metadata={
+                    'teacher_name': teacher_name,
+                    'teacher_class': teacher_class,
+                    'date': date_str,
+                    'period': period,
+                    'offer_label': offer_label,
+                    'students_count': len(students)
+                }
+            )
+            
+            # Sende Gmail-Benachrichtigung an Admin
+            admin_email = os.environ.get('ADMIN_EMAIL', 'sportoase.kg@gmail.com')
+            try:
+                send_gmail_notification(booking_data, admin_email)
+            except Exception as e:
+                print(f"Gmail-Benachrichtigung fehlgeschlagen: {e}")
+            
+            # Broadcast an SSE-Clients
+            if notification_id:
+                unread_count = get_unread_notification_count(recipient_role='admin')
+                broadcast_notification({
+                    'type': 'new_booking',
+                    'notification_id': notification_id,
+                    'message': notification_message,
+                    'booking_data': {
+                        'date': date_str,
+                        'period': period,
+                        'teacher_name': teacher_name,
+                        'offer_label': offer_label,
+                        'students_count': len(students)
+                    },
+                    'unread_count': unread_count
+                })
             
             flash(f'Buchung erfolgreich! {len(students)} Schüler für {offer_label} angemeldet.', 'success')
             return redirect(url_for('dashboard', date=date_str))
@@ -984,6 +1049,90 @@ def admin_unblock_slot():
         flash('Fehler beim Freigeben des Slots.', 'error')
     
     return redirect(request.referrer or url_for('dashboard'))
+
+# ============================================================================
+# Notifications & Server-Sent Events (SSE) Routes
+# ============================================================================
+
+@app.route('/notifications/stream')
+@admin_required
+def notifications_stream():
+    """SSE-Endpunkt für Echtzeit-Benachrichtigungen (nur für Admins)"""
+    def event_stream():
+        """Generator für Server-Sent Events"""
+        q = queue.Queue(maxsize=50)
+        
+        with subscribers_lock:
+            notification_subscribers.append(q)
+        
+        try:
+            while True:
+                try:
+                    message = q.get(timeout=30)
+                    yield f"data: {json.dumps(message)}\n\n"
+                except queue.Empty:
+                    yield f"data: {json.dumps({'type': 'ping'})}\n\n"
+        finally:
+            with subscribers_lock:
+                if q in notification_subscribers:
+                    notification_subscribers.remove(q)
+    
+    return Response(event_stream(), mimetype='text/event-stream')
+
+@app.route('/api/notifications/recent', methods=['GET'])
+@admin_required
+def api_get_recent_notifications():
+    """Holt die neuesten Benachrichtigungen"""
+    limit = request.args.get('limit', 10, type=int)
+    limit = min(limit, 50)
+    
+    notifications = get_recent_notifications(recipient_role='admin', limit=limit)
+    return jsonify({
+        'success': True,
+        'notifications': notifications
+    })
+
+@app.route('/api/notifications/unread_count', methods=['GET'])
+@admin_required
+def api_get_unread_count():
+    """Holt die Anzahl der ungelesenen Benachrichtigungen"""
+    count = get_unread_notification_count(recipient_role='admin')
+    return jsonify({
+        'success': True,
+        'count': count
+    })
+
+@app.route('/api/notifications/<int:notification_id>/mark_read', methods=['POST'])
+@admin_required
+def api_mark_notification_read(notification_id):
+    """Markiert eine Benachrichtigung als gelesen"""
+    csrf_token = request.json.get('csrf_token', '') if request.json else ''
+    if not validate_csrf_token(csrf_token):
+        return jsonify({
+            'success': False,
+            'error': 'Invalid CSRF token'
+        }), 403
+    
+    success = mark_notification_as_read(notification_id)
+    return jsonify({
+        'success': success
+    })
+
+@app.route('/api/notifications/mark_all_read', methods=['POST'])
+@admin_required
+def api_mark_all_notifications_read():
+    """Markiert alle Benachrichtigungen als gelesen"""
+    csrf_token = request.json.get('csrf_token', '') if request.json else ''
+    if not validate_csrf_token(csrf_token):
+        return jsonify({
+            'success': False,
+            'error': 'Invalid CSRF token'
+        }), 403
+    
+    success = mark_all_notifications_as_read(recipient_role='admin')
+    return jsonify({
+        'success': success
+    })
 
 if __name__ == '__main__':
     # Starte die Anwendung

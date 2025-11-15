@@ -30,3 +30,7 @@ flask
 flask-sqlalchemy
 gunicorn
 psycopg2-binary
+google-api-python-client
+google-auth
+google-auth-oauthlib
+requests

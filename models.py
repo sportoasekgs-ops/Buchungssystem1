@@ -119,6 +119,44 @@ class BlockedSlot(db.Model):
             'created_at': self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at
         }
 
+class Notification(db.Model):
+    """Modell für Benachrichtigungen an Admins"""
+    __tablename__ = 'notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    booking_id = db.Column(db.Integer, db.ForeignKey('bookings.id', ondelete='CASCADE'), nullable=True, index=True)
+    recipient_role = db.Column(db.String(20), nullable=False, default='admin')
+    notification_type = db.Column(db.String(50), nullable=False, default='new_booking')
+    message = db.Column(db.String(500), nullable=False)
+    is_read = db.Column(db.Boolean, default=False, nullable=False, index=True)
+    read_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
+    metadata_json = db.Column(db.Text, nullable=True)
+    
+    booking = db.relationship('Booking', backref='notifications', lazy=True)
+    
+    def to_dict(self):
+        """Konvertiert Notification zu Dictionary"""
+        metadata = None
+        if self.metadata_json:
+            try:
+                metadata = json.loads(self.metadata_json)
+            except:
+                metadata = None
+        
+        return {
+            'id': self.id,
+            'booking_id': self.booking_id,
+            'recipient_role': self.recipient_role,
+            'notification_type': self.notification_type,
+            'message': self.message,
+            'is_read': self.is_read,
+            'read_at': self.read_at.isoformat() if isinstance(self.read_at, datetime) else self.read_at,
+            'created_at': self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
+            'metadata': metadata,
+            'booking': self.booking.to_dict() if self.booking else None
+        }
+
 # Hilfsfunktionen für Kompatibilität mit dem alten Code
 
 def create_user(username, password, role, email=None):
@@ -344,3 +382,81 @@ def get_all_blocked_slots():
     """Gibt alle blockierten Slots zurück (für Admin-Ansicht)"""
     blocked_slots = BlockedSlot.query.order_by(BlockedSlot.date.desc(), BlockedSlot.period).all()
     return [b.to_dict() for b in blocked_slots]
+
+def create_notification(booking_id, message, notification_type='new_booking', recipient_role='admin', metadata=None):
+    """Erstellt eine neue Benachrichtigung"""
+    try:
+        metadata_json = json.dumps(metadata, ensure_ascii=False) if metadata else None
+        notification = Notification(
+            booking_id=booking_id,
+            recipient_role=recipient_role,
+            notification_type=notification_type,
+            message=message,
+            metadata_json=metadata_json,
+            is_read=False,
+            created_at=datetime.now()
+        )
+        db.session.add(notification)
+        db.session.commit()
+        return notification.id
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Erstellen der Benachrichtigung: {e}")
+        return None
+
+def get_unread_notifications(recipient_role='admin'):
+    """Gibt alle ungelesenen Benachrichtigungen zurück"""
+    notifications = Notification.query.filter_by(recipient_role=recipient_role, is_read=False).order_by(Notification.created_at.desc()).all()
+    return [n.to_dict() for n in notifications]
+
+def get_recent_notifications(recipient_role='admin', limit=10):
+    """Gibt die neuesten Benachrichtigungen zurück (gelesen und ungelesen)"""
+    notifications = Notification.query.filter_by(recipient_role=recipient_role).order_by(Notification.created_at.desc()).limit(limit).all()
+    return [n.to_dict() for n in notifications]
+
+def mark_notification_as_read(notification_id):
+    """Markiert eine Benachrichtigung als gelesen"""
+    try:
+        notification = Notification.query.get(notification_id)
+        if not notification:
+            return False
+        notification.is_read = True
+        notification.read_at = datetime.now()
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Markieren der Benachrichtigung: {e}")
+        return False
+
+def mark_all_notifications_as_read(recipient_role='admin'):
+    """Markiert alle Benachrichtigungen als gelesen"""
+    try:
+        notifications = Notification.query.filter_by(recipient_role=recipient_role, is_read=False).all()
+        for notification in notifications:
+            notification.is_read = True
+            notification.read_at = datetime.now()
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Markieren aller Benachrichtigungen: {e}")
+        return False
+
+def get_unread_notification_count(recipient_role='admin'):
+    """Gibt die Anzahl der ungelesenen Benachrichtigungen zurück"""
+    return Notification.query.filter_by(recipient_role=recipient_role, is_read=False).count()
+
+def delete_notification(notification_id):
+    """Löscht eine Benachrichtigung"""
+    try:
+        notification = Notification.query.get(notification_id)
+        if not notification:
+            return False
+        db.session.delete(notification)
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Löschen der Benachrichtigung: {e}")
+        return False
