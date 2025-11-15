@@ -132,3 +132,8 @@
 [x] 127. ✅ Frontend auf Polling-basierte Benachrichtigungen umgestellt (alle 30 Sek)
 [x] 128. ✅ Deployment-Konfiguration optimiert mit Timeout 120s und 2 Workers
 [x] 129. ✅ Alle Performance-Probleme behoben - App läuft stabil
+[x] 130. ✅ Passwort-Ändern-Funktion implementiert mit voller Validierung
+[x] 131. ✅ Neue Route /change_password mit CSRF-Schutz erstellt
+[x] 132. ✅ Template für Passwort-Änderung erstellt
+[x] 133. ✅ Navigation zum Passwort-Ändern hinzugefügt
+[x] 134. ✅ Sicherheitsüberprüfung durch Architect bestanden
