@@ -194,6 +194,24 @@ def verify_password(user_dict, password):
     user = User.query.get(user_dict['id'])
     return user.check_password(password) if user else False
 
+def change_user_password(user_id, old_password, new_password):
+    """Ändert das Passwort eines Benutzers"""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return {'success': False, 'error': 'Benutzer nicht gefunden'}
+        
+        if not user.check_password(old_password):
+            return {'success': False, 'error': 'Altes Passwort ist falsch'}
+        
+        user.set_password(new_password)
+        db.session.commit()
+        return {'success': True, 'message': 'Passwort erfolgreich geändert'}
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Ändern des Passworts: {e}")
+        return {'success': False, 'error': 'Fehler beim Ändern des Passworts'}
+
 def get_all_users():
     """Gibt alle Benutzer zurück (für Admin-Ansicht)"""
     users = User.query.order_by(User.role, User.username).all()

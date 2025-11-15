@@ -85,7 +85,8 @@ from models import (
     update_booking, delete_booking, User, Booking,
     create_notification, get_unread_notifications, get_recent_notifications,
     mark_notification_as_read, mark_all_notifications_as_read,
-    get_unread_notification_count, get_booking_by_id, check_student_double_booking
+    get_unread_notification_count, get_booking_by_id, check_student_double_booking,
+    change_user_password
 )
 from config import *
 from email_service import send_booking_notification
@@ -234,6 +235,47 @@ def logout():
     session.clear()
     flash('Sie wurden abgemeldet.', 'info')
     return redirect(url_for('login'))
+
+# Route: Passwort ändern
+@app.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    """Ermöglicht Benutzern ihr Passwort zu ändern"""
+    if request.method == 'POST':
+        # CSRF-Token Validierung
+        csrf_token = request.form.get('csrf_token', '')
+        if not validate_csrf_token(csrf_token):
+            flash('Ungültiges Sicherheits-Token. Bitte versuchen Sie es erneut.', 'error')
+            return redirect(url_for('change_password'))
+        
+        old_password = request.form.get('old_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        # Validierung
+        if not old_password or not new_password or not confirm_password:
+            flash('Bitte füllen Sie alle Felder aus.', 'error')
+            return redirect(url_for('change_password'))
+        
+        if new_password != confirm_password:
+            flash('Die neuen Passwörter stimmen nicht überein.', 'error')
+            return redirect(url_for('change_password'))
+        
+        if len(new_password) < 6:
+            flash('Das neue Passwort muss mindestens 6 Zeichen lang sein.', 'error')
+            return redirect(url_for('change_password'))
+        
+        # Passwort ändern
+        result = change_user_password(session['user_id'], old_password, new_password)
+        
+        if result['success']:
+            flash(result['message'], 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash(result['error'], 'error')
+            return redirect(url_for('change_password'))
+    
+    return render_template('change_password.html')
 
 # Route: Dashboard
 @app.route('/dashboard')
