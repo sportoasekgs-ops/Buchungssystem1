@@ -944,7 +944,8 @@ def manage_slots():
     
     if request.method == 'POST':
         weekday = request.form.get('weekday')
-        period = int(request.form.get('period'))
+        period_str = request.form.get('period')
+        period = int(period_str) if period_str else 0
         label = request.form.get('label', '').strip()
         
         if weekday and period and label:
