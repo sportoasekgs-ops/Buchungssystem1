@@ -39,10 +39,12 @@ Preferred communication style: Simple, everyday language.
 **Key Features**:
 - Role-based access control (teacher vs. admin)
 - Booking validation: 60-minute advance booking requirement, 5-student maximum capacity per slot
+- Past date detection: Slots in the past are visually greyed out and cannot be booked
 - Weekly schedule display with fixed vs. flexible time slots with booking information (who booked, how many students)
 - Dynamic module selection for flexible time slots
 - Admin booking management: create, edit, and delete bookings with full validation
 - Capacity-aware editing that prevents overbooking
+- Modern card-based booking form design with improved visual hierarchy
 
 ### Data Storage
 
@@ -151,6 +153,31 @@ Preferred communication style: Simple, everyday language.
 - Change admin password after first login!
 
 ## Recent Changes
+
+- 2024-11-15: **Past Date Detection & Modernized Booking Design**
+  - **Past Date Protection**: Implemented comprehensive past date detection and prevention
+    - Created `is_past_date()` helper function using Berlin timezone (Europe/Berlin)
+    - Backend validation prevents bookings of past time slots
+    - Dashboard marks past slots with `is_past` flag in both weekly overview and daily view
+    - Past slots are visually greyed out with distinctive styling (.period-past, .past-row, .past-text)
+    - Server-side enforcement ensures no bookings can be created for past dates
+  - **Modernized Booking Form Design**: Complete redesign of booking interface
+    - Card-based layout with icon-enhanced sections for better visual hierarchy
+    - Separate cards for booking info, teacher details, students, and module selection
+    - Professional gradient backgrounds and shadow effects
+    - Improved form spacing, typography, and color scheme
+    - Responsive design with better mobile support
+    - Visual capacity indicator showing available spots (e.g., "3 / 5")
+  - **CSRF Token Fix**: Corrected CSRF token implementation
+    - Context processor now returns token value directly (not function)
+    - All templates updated to use `{{ csrf_token }}` without parentheses
+    - Secure form submissions across all POST requests
+  - **CSS Enhancements**:
+    - Added `.booking-container`, `.booking-info-card`, `.info-grid` styles
+    - Created `.form-card`, `.card-header`, `.card-body` for modern card layout
+    - Improved button styling with hover effects and transitions
+    - Enhanced badge styles for fest/frei offerings
+    - Responsive grid layouts for better form organization
 
 - 2024-11-15: **Admin Slot Blocking for Consultation Meetings**
   - **Slot Blocking Feature**: Admins can now block time slots for consultation meetings (Beratungsgespräche)
