@@ -575,8 +575,6 @@ def book(date_str, period):
                 'teacher_class': teacher_class,
                 'students_json': json.dumps(students, ensure_ascii=False)
             }
-            send_booking_notification(booking_data, session.get('user_email', 'system'))
-            
             # Erstelle Notification in der Datenbank
             notification_message = f"Neue Buchung: {teacher_name} hat {len(students)} Schüler für {offer_label} am {date_str} (Stunde {period}) angemeldet."
             notification_id = create_notification(
@@ -594,12 +592,11 @@ def book(date_str, period):
                 }
             )
             
-            # Sende Gmail-Benachrichtigung an Admin
-            admin_email = os.environ.get('ADMIN_EMAIL', 'sportoase.kg@gmail.com')
+            # Sende E-Mail-Benachrichtigung an Admin (SMTP)
             try:
-                send_gmail_notification(booking_data, admin_email)
+                send_booking_notification(booking_data)
             except Exception as e:
-                print(f"Gmail-Benachrichtigung fehlgeschlagen: {e}")
+                print(f"E-Mail-Benachrichtigung fehlgeschlagen: {e}")
             
             # Broadcast an SSE-Clients
             if notification_id:
