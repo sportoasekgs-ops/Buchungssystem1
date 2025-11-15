@@ -159,3 +159,8 @@
 [x] 154. ✅ Blockieren-Buttons mit Gradient, Schloss-Icon 🔒 und Hover-Effekt verbessert
 [x] 155. ✅ Datumswahl mit Kalender-Icon 📆 ergänzt
 [x] 156. ✅ Navigationspfeile modernisiert (❮ ❯ statt ◀ ▶)
+[x] 157. ✅ DATABASE_URL Secret updated with new Render PostgreSQL credentials
+[x] 158. ✅ Connected to external Render database: dpg-d4bihtshg0os73evn36g-a.frankfurt-postgres.render.com/spo_m4dy
+[x] 159. ✅ Workflow restarted successfully with new database connection
+[x] 160. ✅ Application running smoothly on port 5000 with external Render PostgreSQL
+[x] 161. ✅ Login page verified and displaying correctly with new database connection
