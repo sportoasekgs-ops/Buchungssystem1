@@ -35,10 +35,34 @@
         {% block content %}{% endblock %}
     </main>
     
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 SportOase - Buchungssystem</p>
+    <div class="credits-button" onclick="toggleCredits()">?</div>
+    
+    <div id="creditsModal" class="credits-modal">
+        <div class="credits-content">
+            <span class="credits-close" onclick="toggleCredits()">&times;</span>
+            <h3>Credits</h3>
+            <p><strong>Programmed in:</strong> Python (Flask)</p>
+            <p><strong>Security:</strong> CloudFlare secured</p>
+            <p><strong>Server:</strong> Encrypted server</p>
         </div>
-    </footer>
+    </div>
+    
+    <script>
+        function toggleCredits() {
+            var modal = document.getElementById('creditsModal');
+            if (modal.style.display === 'block') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'block';
+            }
+        }
+        
+        window.onclick = function(event) {
+            var modal = document.getElementById('creditsModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
