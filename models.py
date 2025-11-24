@@ -12,11 +12,17 @@ class User(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, nullable=False, index=True)
-    email = db.Column(db.String(120))
-    password_hash = db.Column(db.String(256), nullable=False)
+    email = db.Column(db.String(120), index=True)
+    password_hash = db.Column(db.String(256), nullable=True)
     role = db.Column(db.String(20), nullable=False)
+    oauth_provider = db.Column(db.String(50), nullable=True)
+    oauth_id = db.Column(db.String(200), nullable=True)
     
     bookings = db.relationship('Booking', backref='teacher', lazy=True)
+    
+    __table_args__ = (
+        db.UniqueConstraint('oauth_provider', 'oauth_id', name='unique_oauth_user'),
+    )
     
     def set_password(self, password):
         """Setzt das Passwort (gehasht)"""
@@ -33,7 +39,9 @@ class User(db.Model):
             'username': self.username,
             'email': self.email,
             'password_hash': self.password_hash,
-            'role': self.role
+            'role': self.role,
+            'oauth_provider': self.oauth_provider,
+            'oauth_id': self.oauth_id
         }
 
 class Booking(db.Model):
@@ -185,6 +193,33 @@ def get_user_by_email(email):
     """Sucht einen Benutzer anhand der E-Mail-Adresse"""
     user = User.query.filter_by(email=email).first()
     return user.to_dict() if user else None
+
+def get_or_create_oauth_user(email, username, oauth_provider, oauth_id, role='teacher'):
+    """Erstellt oder aktualisiert einen OAuth-Benutzer"""
+    try:
+        user = User.query.filter_by(oauth_provider=oauth_provider, oauth_id=oauth_id).first()
+        
+        if user:
+            user.email = email
+            user.username = username
+            user.role = role
+        else:
+            user = User(
+                username=username,
+                email=email,
+                role=role,
+                oauth_provider=oauth_provider,
+                oauth_id=oauth_id,
+                password_hash=None
+            )
+            db.session.add(user)
+        
+        db.session.commit()
+        return user.to_dict()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Erstellen/Aktualisieren des OAuth-Benutzers: {e}")
+        return None
 
 def get_user_by_id(user_id):
     """Sucht einen Benutzer anhand der ID"""

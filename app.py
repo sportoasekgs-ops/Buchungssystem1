@@ -90,7 +90,7 @@ from models import (
     create_notification, get_unread_notifications, get_recent_notifications,
     mark_notification_as_read, mark_all_notifications_as_read,
     get_unread_notification_count, get_booking_by_id, check_student_double_booking,
-    change_user_password
+    change_user_password, get_or_create_oauth_user
 )
 from config import *
 from email_service import send_booking_notification
@@ -101,6 +101,10 @@ from calendar_service import init_calendar_service, is_calendar_enabled, create_
 # Initialisiere Google Calendar Service (optional)
 with app.app_context():
     init_calendar_service()
+
+# IServ OAuth-Integration initialisieren
+from oauth_config import init_oauth, determine_user_role
+oauth_instance, iserv_client = init_oauth(app)
 
 # Schema-Erstellung erfolgt explizit über db_setup.py
 # Nicht automatisch bei jedem Import!
@@ -237,7 +241,70 @@ def login():
         else:
             flash('Ungültiger Benutzername oder Passwort.', 'error')
     
-    return render_template('login.html')
+    iserv_enabled = bool(os.environ.get('ISERV_CLIENT_ID') and os.environ.get('ISERV_CLIENT_SECRET'))
+    return render_template('login.html', iserv_enabled=iserv_enabled)
+
+# Route: IServ SSO Login initiieren
+@app.route('/login/iserv')
+def login_iserv():
+    """Startet den IServ OAuth2-Login-Flow"""
+    if not iserv_client:
+        flash('IServ-Login ist nicht konfiguriert.', 'error')
+        return redirect(url_for('login'))
+    
+    redirect_uri = url_for('oauth_callback', _external=True)
+    return iserv_client.authorize_redirect(redirect_uri)
+
+# Route: OAuth Callback von IServ
+@app.route('/oauth/callback')
+def oauth_callback():
+    """Callback-Route für IServ OAuth2"""
+    if not iserv_client:
+        flash('IServ-Login ist nicht konfiguriert.', 'error')
+        return redirect(url_for('login'))
+    
+    try:
+        token = iserv_client.authorize_access_token()
+        userinfo = token.get('userinfo')
+        
+        if not userinfo:
+            userinfo = iserv_client.userinfo(token=token)
+        
+        email = userinfo.get('email')
+        sub = userinfo.get('sub')
+        name = userinfo.get('name', email)
+        
+        if not email or not sub:
+            flash('Fehler beim Abrufen der Benutzerdaten von IServ.', 'error')
+            return redirect(url_for('login'))
+        
+        role = determine_user_role(userinfo)
+        username = email.split('@')[0]
+        
+        user = get_or_create_oauth_user(
+            email=email,
+            username=username,
+            oauth_provider='iserv',
+            oauth_id=sub,
+            role=role
+        )
+        
+        if not user:
+            flash('Fehler beim Erstellen des Benutzers.', 'error')
+            return redirect(url_for('login'))
+        
+        session['user_id'] = user['id']
+        session['user_username'] = user['username']
+        session['user_email'] = user['email']
+        session['user_role'] = user['role']
+        
+        flash(f'Willkommen, {name}!', 'success')
+        return redirect(url_for('dashboard'))
+        
+    except Exception as e:
+        print(f"OAuth Fehler: {e}")
+        flash('Fehler beim IServ-Login. Bitte versuchen Sie es erneut.', 'error')
+        return redirect(url_for('login'))
 
 # Route: Logout
 @app.route('/logout')
