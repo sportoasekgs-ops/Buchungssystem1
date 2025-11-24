@@ -1312,6 +1312,59 @@ def api_mark_all_notifications_read():
         'success': success
     })
 
+# Error-Handler für Production mit Fallback
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handler für 404 Not Found Fehler"""
+    try:
+        return render_template('errors/404.html'), 404
+    except Exception:
+        return '<h1>404 - Seite nicht gefunden</h1><p><a href="/">Zur Startseite</a></p>', 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handler für 500 Internal Server Error"""
+    try:
+        db.session.rollback()
+    except Exception:
+        pass
+    try:
+        return render_template('errors/500.html'), 500
+    except Exception:
+        return '<h1>500 - Interner Serverfehler</h1><p>Bitte versuchen Sie es später erneut.</p>', 500
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    """Handler für 403 Forbidden Fehler"""
+    try:
+        return render_template('errors/403.html'), 403
+    except Exception:
+        return '<h1>403 - Zugriff verweigert</h1><p><a href="/">Zur Startseite</a></p>', 403
+
+# Logging-Konfiguration für Production
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+
+if os.environ.get('FLASK_ENV') == 'production' or not os.environ.get('FLASK_DEBUG'):
+    if not os.path.exists('logs'):
+        try:
+            os.mkdir('logs')
+        except OSError:
+            pass
+    
+    try:
+        file_handler = RotatingFileHandler('logs/sportoase.log', maxBytes=10240000, backupCount=10)
+        file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+        ))
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+        app.logger.setLevel(logging.INFO)
+        app.logger.info('SportOase Buchungssystem gestartet (Production Mode)')
+    except Exception as e:
+        print(f"Fehler beim Einrichten des Logging-Handlers: {e}")
+
 if __name__ == '__main__':
     # Starte die Anwendung
     app.run(host='0.0.0.0', port=5000, debug=True)
