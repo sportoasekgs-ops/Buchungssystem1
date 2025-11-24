@@ -12,7 +12,15 @@ import threading
 
 # Flask-App erstellen
 app = Flask(__name__)
-app.secret_key = os.environ.get('SESSION_SECRET', 'dev-secret-key-change-in-production')
+
+# Session-Secret aus Umgebungsvariable (MUSS gesetzt sein!)
+session_secret = os.environ.get('SESSION_SECRET')
+if not session_secret:
+    raise RuntimeError(
+        "SESSION_SECRET Umgebungsvariable ist nicht gesetzt! "
+        "Bitte setzen Sie einen sicheren, zufälligen Wert in Replit Secrets."
+    )
+app.secret_key = session_secret
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # SSE Broadcaster für Echtzeit-Benachrichtigungen
@@ -57,13 +65,9 @@ db_uri = os.environ.get("DATABASE_URL") or os.environ.get("SQLALCHEMY_DATABASE_U
 if db_uri:
     db_uri = db_uri.strip()
 
-print("DEBUG DATABASE_URL:", os.environ.get("DATABASE_URL"))
-print("DEBUG SQLALCHEMY_DATABASE_URI env:", os.environ.get("SQLALCHEMY_DATABASE_URI"))
-print("DEBUG final DB URI:", db_uri)
-
 if not db_uri:
     raise RuntimeError(
-        "Keine DB-URL gefunden. Bitte in Render DATABASE_URL "
+        "Keine DB-URL gefunden. Bitte DATABASE_URL "
         "oder SQLALCHEMY_DATABASE_URI setzen."
     )
 
