@@ -122,7 +122,9 @@
                 <span class="arrow-icon">❯</span>
             </a>
         </div>
-        <table class="week-table">
+        <div class="week-table-wrapper">
+            <div class="scroll-hint scroll-hint-left" style="display:none;">❮</div>
+            <table class="week-table">
             <thead>
                 <tr>
                     <th>Stunde</th>
@@ -209,6 +211,8 @@
                 {% endfor %}
             </tbody>
         </table>
+            <div class="scroll-hint scroll-hint-right">❯</div>
+        </div>
     </div>
     
     <!-- Kontakt-Information -->
