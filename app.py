@@ -260,7 +260,7 @@ def login_iserv():
     return iserv_client.authorize_redirect(redirect_uri)
 
 # Route: OAuth Callback von IServ
-@app.route('/oauth/callback/')
+@app.route('/oauth/callback')
 def oauth_callback():
     """Callback-Route für IServ OAuth2"""
     if not iserv_client:
