@@ -197,28 +197,47 @@ def get_user_by_email(email):
 def get_or_create_oauth_user(email, username, oauth_provider, oauth_id, role='teacher'):
     """Erstellt oder aktualisiert einen OAuth-Benutzer"""
     try:
+        # Zuerst nach oauth_provider + oauth_id suchen (eindeutig für OAuth-Benutzer)
         user = User.query.filter_by(oauth_provider=oauth_provider, oauth_id=oauth_id).first()
         
         if user:
+            # Benutzer existiert bereits, aktualisiere die Daten
             user.email = email
-            user.username = username
+            user.username = email  # E-Mail als Username verwenden
             user.role = role
+            print(f"✅ OAuth-Benutzer aktualisiert: {email} (ID: {user.id}, Rolle: {role})")
         else:
-            user = User(
-                username=username,
-                email=email,
-                role=role,
-                oauth_provider=oauth_provider,
-                oauth_id=oauth_id,
-                password_hash=None
-            )
-            db.session.add(user)
+            # Prüfe, ob es bereits einen Benutzer mit dieser E-Mail gibt
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user:
+                # Aktualisiere den existierenden Benutzer mit OAuth-Daten
+                existing_user.oauth_provider = oauth_provider
+                existing_user.oauth_id = oauth_id
+                existing_user.role = role
+                existing_user.username = email
+                user = existing_user
+                print(f"✅ Existierender Benutzer mit OAuth verknüpft: {email} (ID: {user.id}, Rolle: {role})")
+            else:
+                # Neuen Benutzer erstellen
+                user = User(
+                    username=email,  # E-Mail als Username verwenden
+                    email=email,
+                    role=role,
+                    oauth_provider=oauth_provider,
+                    oauth_id=oauth_id,
+                    password_hash=None
+                )
+                db.session.add(user)
+                print(f"✅ Neuer OAuth-Benutzer erstellt: {email} (Rolle: {role})")
         
         db.session.commit()
         return user.to_dict()
     except Exception as e:
         db.session.rollback()
-        print(f"Fehler beim Erstellen/Aktualisieren des OAuth-Benutzers: {e}")
+        print(f"❌ FEHLER beim Erstellen/Aktualisieren des OAuth-Benutzers: {e}")
+        print(f"   E-Mail: {email}, OAuth-Provider: {oauth_provider}, OAuth-ID: {oauth_id}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def get_user_by_id(user_id):
