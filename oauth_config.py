@@ -91,8 +91,9 @@ def determine_user_role(userinfo):
         return 'admin'
     
     # Lehrer und Mitarbeitende haben Teacher-Rechte (case-insensitive)
-    if 'lehrer' in all_names_lower or 'mitarbeitende' in all_names_lower:
-        print(f"   → Teacher (Gruppen-Match)")
+    # Akzeptiere sowohl "Mitarbeitende" (Rolle) als auch "Mitarbeiter" (Gruppe)
+    if 'lehrer' in all_names_lower or 'mitarbeitende' in all_names_lower or 'mitarbeiter' in all_names_lower:
+        print(f"   → Teacher (Gruppen/Rollen-Match)")
         return 'teacher'
     
     # Kein Zugang für andere Benutzer (z.B. Schüler)
@@ -106,11 +107,13 @@ def extract_names(data):
     if isinstance(data, list):
         for item in data:
             if isinstance(item, dict):
-                # Format: [{name: "...", id: "..."}]
+                # Format: [{name: "...", displayName: "...", id: "..."}]
                 if 'name' in item:
                     names.append(item['name'])
                 if 'Name' in item:
                     names.append(item['Name'])
+                if 'displayName' in item:
+                    names.append(item['displayName'])
             elif isinstance(item, str):
                 names.append(item)
     elif isinstance(data, str):
@@ -124,9 +127,13 @@ def extract_names(data):
                     names.append(value['name'])
                 if 'Name' in value:
                     names.append(value['Name'])
+                if 'displayName' in value:
+                    names.append(value['displayName'])
             elif isinstance(value, str):
                 names.append(value)
-        # Falls 'name' direkt im Dict ist
+        # Falls 'name' oder 'displayName' direkt im Dict ist
         if 'name' in data:
             names.append(data['name'])
+        if 'displayName' in data:
+            names.append(data['displayName'])
     return names

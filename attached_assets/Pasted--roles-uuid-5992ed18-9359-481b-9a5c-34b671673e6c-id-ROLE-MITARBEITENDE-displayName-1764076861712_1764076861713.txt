@@ -1,0 +1,17 @@
+   roles: [{'uuid': '5992ed18-9359-481b-9a5c-34b671673e6c', 'id': 'ROLE_MITARBEITENDE', 'displayName': 'Mitarbeitende'}, {'uuid': None, 'id': 'ROLE_USER', 'displayName': 'Benutzer'}]
+   Alle gefundenen Namen (lowercase): ['mitarbeiter']
+   → KEIN ZUGANG (keine berechtigte Gruppe)
+🔐 IServ Login: developer@kgs-pattensen.de
+   Sub-ID: 8148db3a-4705-461a-857e-3c7b17ce9f5f
+   Rolle: None
+   UserInfo: {'exp': 1764080430, 'iat': 1764076830, 'iss': 'https://kgs-pattensen.de', 'aud': '283_4g9xbmsz042s8ws0wowcgwk00ggcgsgsc0sc8s0wck0gskgcss', 'sub': '8148db3a-4705-461a-857e-3c7b17ce9f5f', 'nonce': '22ZJshJeHXG4WWujqnbE', 'email': 'developer@kgs-pattensen.de', 'email_verified': True, 'groups': {'2211': {'id': 2211, 'uuid': 'f5223646-9ee4-4c1c-817c-a7d67269891f', 'act': 'mitarbeiter', 'name': 'Mitarbeiter'}}, 'preferred_username': 'developer', 'name': 'Developer', 'nickname': '', 'given_name': '', 'family_name': 'Developer', 'locale': 'de-DE', 'roles': [{'uuid': '5992ed18-9359-481b-9a5c-34b671673e6c', 'id': 'ROLE_MITARBEITENDE', 'displayName': 'Mitarbeitende'}, {'uuid': None, 'id': 'ROLE_USER', 'displayName': 'Benutzer'}]}
+❌ Zugang verweigert für: developer@kgs-pattensen.de (keine berechtigte Gruppe)
+172.70.242.209 - - [25/Nov/2025:13:20:30 +0000] "GET /oauth/callback?state=2I1aKc0RMcxkJ9nswVzX4qRWJOkWzm&code=ZDM0NDgxNjZmZDkyYTcwZTNlZGNhY2Q1OTdlZjViYTRmODFjNjcxNTRjZWYwMGY4MGY2YTJkYjViMzAxNmE5Mg HTTP/1.1" 302 199 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1"
+172.70.242.209 - - [25/Nov/2025:13:20:30 +0000] "GET /login HTTP/1.1" 200 3530 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1"
+172.69.151.48 - - [25/Nov/2025:13:20:30 +0000] "GET /static/style.css?v=20251125 HTTP/1.1" 304 0 "https://sportoase.app/login" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1"
+172.69.151.48 - - [25/Nov/2025:13:20:30 +0000] "GET /static/logo.png HTTP/1.1" 304 0 "https://sportoase.app/login" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1"
+172.71.172.28 - - [25/Nov/2025:13:20:32 +0000] "GET /login HTTP/1.1" 200 3283 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+172.71.172.28 - - [25/Nov/2025:13:20:32 +0000] "GET /static/style.css?v=20251125 HTTP/1.1" 200 0 "https://sportoase.app/login" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+172.71.172.29 - - [25/Nov/2025:13:20:32 +0000] "GET /static/logo.png HTTP/1.1" 200 0 "https://sportoase.app/login" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
+172.69.151.48 - - [25/Nov/2025:13:20:36 +0000] "GET /api/notifications/recent?limit=10 HTTP/1.1" 200 841 "https://sportoase.app/dashboard" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+172.69.151.48 - - [25/Nov/2025:13:20:36 +0000] "GET /api/notifications/unread_count HTTP/1.1" 200 27 "https://sportoase.app/dashboard" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
