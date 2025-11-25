@@ -5,62 +5,71 @@
 */
 
 :root {
-    --primary: #38bdf8;
-    --primary-dark: #0ea5e9;
-    --primary-light: #e0f2fe;
-    --accent: #10B981;
-    --accent-warn: #F59E0B;
-    --text-primary: #0F172A;
-    --text-secondary: #64748B;
-    --text-tertiary: #94A3B8;
+    /* ERS Pink als Primärfarbe */
+    --primary: #E91E63;
+    --primary-dark: #C2185B;
+    --primary-light: #FCE4EC;
+    --accent: #4CAF50;
+    --accent-warn: #FF9800;
+    /* Neutrale Grautöne */
+    --text-primary: #212121;
+    --text-secondary: #616161;
+    --text-tertiary: #9E9E9E;
     --bg-primary: #FFFFFF;
-    --bg-secondary: #F8FAFC;
-    --bg-tertiary: #F1F5F9;
-    --border: #E2E8F0;
-    --border-light: #F1F5F9;
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-    --radius-sm: 6px;
+    --bg-secondary: #FAFAFA;
+    --bg-tertiary: #F5F5F5;
+    --border: #E0E0E0;
+    --border-light: #EEEEEE;
+    /* Schatten */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.12);
+    /* Radien */
+    --radius-sm: 4px;
     --radius: 8px;
     --radius-lg: 12px;
     --radius-xl: 16px;
-    --login-gradient: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
-    --success-bg: #F0FDF4;
-    --success-text: #059669;
-    --error-bg: #FEF2F2;
-    --error-text: #DC2626;
-    --blocked-bg: #FEE2E2;
-    --blocked-text: #991B1B;
+    /* Spezielle Farben */
+    --login-gradient: linear-gradient(135deg, #F8BBD9 0%, #E91E63 100%);
+    --success-bg: #E8F5E9;
+    --success-text: #2E7D32;
+    --error-bg: #FFEBEE;
+    --error-text: #C62828;
+    --blocked-bg: #FFEBEE;
+    --blocked-text: #C62828;
 }
 
-/* Dark Mode */
+/* Dark Mode - Homogenes dunkles Design */
 [data-theme="dark"] {
-    --primary: #38bdf8;
-    --primary-dark: #7dd3fc;
-    --primary-light: #0c4a6e;
-    --accent: #34d399;
-    --accent-warn: #fbbf24;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --text-tertiary: #64748b;
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-tertiary: #334155;
-    --border: #475569;
-    --border-light: #334155;
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
-    --login-gradient: linear-gradient(135deg, #1e3a5f 0%, #0c4a6e 100%);
-    --success-bg: #064e3b;
-    --success-text: #6ee7b7;
-    --error-bg: #450a0a;
-    --error-text: #fca5a5;
-    --blocked-bg: #450a0a;
-    --blocked-text: #fca5a5;
+    /* ERS Pink bleibt Primärfarbe, etwas heller für Dark Mode */
+    --primary: #F06292;
+    --primary-dark: #E91E63;
+    --primary-light: #311B28;
+    --accent: #81C784;
+    --accent-warn: #FFB74D;
+    /* Dunkle Grautöne */
+    --text-primary: #FAFAFA;
+    --text-secondary: #BDBDBD;
+    --text-tertiary: #757575;
+    --bg-primary: #121212;
+    --bg-secondary: #1E1E1E;
+    --bg-tertiary: #2D2D2D;
+    --border: #424242;
+    --border-light: #333333;
+    /* Schatten */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.6);
+    /* Spezielle Farben */
+    --login-gradient: linear-gradient(135deg, #1E1E1E 0%, #311B28 100%);
+    --success-bg: #1B3B1B;
+    --success-text: #81C784;
+    --error-bg: #3B1B1B;
+    --error-text: #EF9A9A;
+    --blocked-bg: #3B1B1B;
+    --blocked-text: #EF9A9A;
 }
 
 * {
@@ -303,18 +312,18 @@ h4 {
 }
 
 .btn-success:hover {
-    background: #059669;
+    background: var(--success-text);
 }
 
 .btn-block {
-    background: #EF4444;
+    background: var(--error-text);
     color: white;
     font-size: 0.75rem;
     padding: 0.375rem 0.75rem;
 }
 
 .btn-block:hover {
-    background: #DC2626;
+    background: var(--blocked-text);
 }
 
 .btn-small {
@@ -485,13 +494,13 @@ details.help-section[open] .toggle-arrow {
 }
 
 .type-badge.type-fest {
-    background: #D1FAE5;
-    color: #059669;
+    background: var(--primary-light);
+    color: var(--primary-dark);
 }
 
 .type-badge.type-frei {
-    background: #DBEAFE;
-    color: #2563EB;
+    background: var(--success-bg);
+    color: var(--success-text);
 }
 
 @media (max-width: 768px) {
@@ -882,14 +891,14 @@ details.help-section[open] .toggle-arrow {
 }
 
 .slot-btn-success:hover {
-    background: #059669;
+    background: var(--success-text);
 }
 
 .slot-btn-block {
-    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+    background: var(--accent-warn);
     color: white;
     border: none;
-    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+    box-shadow: var(--shadow-sm);
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
@@ -897,9 +906,9 @@ details.help-section[open] .toggle-arrow {
 }
 
 .slot-btn-block:hover {
-    background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+    filter: brightness(0.9);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-icon {
@@ -1800,7 +1809,7 @@ footer {
     gap: 0.75rem;
     width: 100%;
     padding: 0.875rem 1.5rem;
-    background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+    background: var(--primary);
     color: white;
     text-decoration: none;
     border-radius: var(--radius);
@@ -1813,7 +1822,7 @@ footer {
 }
 
 .btn-iserv:hover {
-    background: linear-gradient(135deg, #4338CA 0%, #4F46E5 100%);
+    background: var(--primary-dark);
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
 }
@@ -2344,13 +2353,13 @@ footer {
 }
 
 .slot-type-label.type-fest {
-    background: #FEF3C7;
-    color: #92400E;
+    background: var(--primary-light);
+    color: var(--primary-dark);
 }
 
 .slot-type-label.type-frei {
-    background: #D1FAE5;
-    color: #065F46;
+    background: var(--success-bg);
+    color: var(--success-text);
 }
 
 .slot-capacity {
@@ -2385,8 +2394,8 @@ footer {
     display: block;
     width: 100%;
     padding: 0.375rem 0.25rem;
-    background: #FEE2E2;
-    color: #991B1B;
+    background: var(--error-bg);
+    color: var(--error-text);
     font-size: 0.625rem;
     font-weight: 600;
     text-align: center;
@@ -2439,62 +2448,14 @@ footer {
     width: 100%;
     padding: 0.25rem;
     font-size: 0.625rem;
-    background: #FEF3C7;
-    border: none;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .slot-block-mini:hover {
-    background: #FCD34D;
-}
-
-/* Dark Mode für kompakte Slots */
-[data-theme="dark"] .slot-type-label.type-fest {
-    background: #78350f;
-    color: #fcd34d;
-}
-
-[data-theme="dark"] .slot-type-label.type-frei {
-    background: #064e3b;
-    color: #6ee7b7;
-}
-
-[data-theme="dark"] .slot-capacity {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .slot-book-btn {
-    background: var(--primary);
-    color: #0f172a;
-}
-
-[data-theme="dark"] .slot-full {
-    background: #450a0a;
-    color: #fca5a5;
-}
-
-[data-theme="dark"] .mini-student {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .slot-block-mini {
-    background: #78350f;
-    color: #fcd34d;
-}
-
-[data-theme="dark"] .slot-block-mini:hover {
-    background: #92400e;
-}
-
-[data-theme="dark"] .booking-offer {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .slot-bookings {
-    border-color: var(--border);
+    background: var(--primary-light);
+    border-color: var(--primary);
 }

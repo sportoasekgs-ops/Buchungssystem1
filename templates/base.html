@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SportOase Buchungssystem{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20251125e">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20251125g">
     <meta http-equiv="refresh" content="600">
     <script>
         (function() {
@@ -23,7 +23,7 @@
         <div class="container">
             <nav>
                 <a href="https://www.erspattensen.de" target="_blank" class="nav-logo-link" title="Ernst-Reuter-Schule">
-                    <img src="{{ url_for('static', filename='logo-ers.jpg') }}" alt="ERS Logo" class="nav-logo">
+                    <img src="{{ url_for('static', filename='logo-ers.png') }}" alt="ERS Logo" class="nav-logo">
                 </a>
                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
                 {% if session.user_role == 'admin' %}
