@@ -264,11 +264,17 @@ def oauth_callback():
             return redirect(url_for('login'))
         
         role = determine_user_role(userinfo)
-        username = email.split('@')[0]
         
+        # Log OAuth-Daten für Debugging
+        print(f"🔐 IServ Login: {email}")
+        print(f"   Sub-ID: {sub}")
+        print(f"   Rolle: {role}")
+        print(f"   UserInfo: {userinfo}")
+        
+        # Verwende E-Mail direkt als Username für OAuth-Benutzer
         user = get_or_create_oauth_user(
             email=email,
-            username=username,
+            username=email,  # E-Mail als Username (vermeidet Unique-Constraint-Fehler)
             oauth_provider='iserv',
             oauth_id=sub,
             role=role
