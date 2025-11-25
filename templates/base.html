@@ -4,18 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SportOase Buchungssystem{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20251125h">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20251125i">
     <meta http-equiv="refresh" content="600">
-    <script>
-        (function() {
-            try {
-                var savedTheme = localStorage.getItem('theme') || 'light';
-                document.documentElement.setAttribute('data-theme', savedTheme);
-            } catch (e) {
-                document.documentElement.setAttribute('data-theme', 'light');
-            }
-        })();
-    </script>
 </head>
 <body>
     {% if session.user_id %}
@@ -46,12 +36,6 @@
                 {% endif %}
                 <a href="{{ url_for('change_password') }}">Passwort ändern</a>
                 <a href="{{ url_for('logout') }}">Logout</a>
-                <div class="theme-toggle">
-                    <label class="theme-switch">
-                        <input type="checkbox" class="theme-switch-input" id="themeToggle" onchange="toggleTheme()">
-                        <span class="theme-switch-slider"></span>
-                    </label>
-                </div>
             </nav>
         </div>
     </div>
@@ -245,41 +229,6 @@
             startPolling();
         });
         {% endif %}
-        
-        // Theme Toggle Funktion
-        function toggleTheme() {
-            try {
-                var html = document.documentElement;
-                var currentTheme = html.getAttribute('data-theme') || 'light';
-                var newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                html.setAttribute('data-theme', newTheme);
-                try {
-                    localStorage.setItem('theme', newTheme);
-                } catch (e) {}
-                
-                var toggle = document.getElementById('themeToggle');
-                if (toggle) {
-                    toggle.checked = newTheme === 'dark';
-                }
-            } catch (e) {
-                console.log('Theme toggle error:', e);
-            }
-        }
-        
-        // Theme beim Laden setzen
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                var savedTheme = 'light';
-                try {
-                    savedTheme = localStorage.getItem('theme') || 'light';
-                } catch (e) {}
-                var toggle = document.getElementById('themeToggle');
-                if (toggle) {
-                    toggle.checked = savedTheme === 'dark';
-                }
-            } catch (e) {}
-        });
     </script>
 </body>
 </html>
