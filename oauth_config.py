@@ -91,10 +91,12 @@ def determine_user_role(userinfo):
         return 'admin'
     
     # Lehrer und Mitarbeitende haben Teacher-Rechte (case-insensitive)
-    # Akzeptiere sowohl "Mitarbeitende" (Rolle) als auch "Mitarbeiter" (Gruppe)
-    if 'lehrer' in all_names_lower or 'mitarbeitende' in all_names_lower or 'mitarbeiter' in all_names_lower:
-        print(f"   → Teacher (Gruppen/Rollen-Match)")
-        return 'teacher'
+    # Akzeptiere: "Lehrer", "Mitarbeitende", "Mitarbeiter", "Pädagogische Mitarbeiter"
+    allowed_teacher_roles = ['lehrer', 'mitarbeitende', 'mitarbeiter', 'pädagogische mitarbeiter']
+    for role_name in allowed_teacher_roles:
+        if role_name in all_names_lower:
+            print(f"   → Teacher (Match: {role_name})")
+            return 'teacher'
     
     # Kein Zugang für andere Benutzer (z.B. Schüler)
     print(f"   → KEIN ZUGANG (keine berechtigte Gruppe)")
