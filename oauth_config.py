@@ -116,6 +116,17 @@ def extract_names(data):
     elif isinstance(data, str):
         names.append(data)
     elif isinstance(data, dict):
+        # IServ-Format: {'2124': {'id': 2124, 'name': 'Lehrer'}, ...}
+        # Durchlaufe alle Werte im Dictionary
+        for key, value in data.items():
+            if isinstance(value, dict):
+                if 'name' in value:
+                    names.append(value['name'])
+                if 'Name' in value:
+                    names.append(value['Name'])
+            elif isinstance(value, str):
+                names.append(value)
+        # Falls 'name' direkt im Dict ist
         if 'name' in data:
             names.append(data['name'])
     return names

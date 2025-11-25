@@ -1,0 +1,13 @@
+groups: {'2124': {'id': 2124, 'uuid': '3a87d2ab-bc3f-4c97-bd2b-5d411d7e7814', 'act': 'lehrer', 'name': 'Lehrer'}}
+   roles: []
+   Alle gefundenen Namen (lowercase): []
+   → KEIN ZUGANG (keine berechtigte Gruppe)
+🔐 IServ Login: developer@kgs-pattensen.de
+   Sub-ID: 8148db3a-4705-461a-857e-3c7b17ce9f5f
+   Rolle: None
+   UserInfo: {'exp': 1764075556, 'iat': 1764071956, 'iss': 'https://kgs-pattensen.de', 'aud': '283_4g9xbmsz042s8ws0wowcgwk00ggcgsgsc0sc8s0wck0gskgcss', 'sub': '8148db3a-4705-461a-857e-3c7b17ce9f5f', 'nonce': 'DBdbLObR3rfNyOrQF6pP', 'email': 'developer@kgs-pattensen.de', 'email_verified': True, 'groups': {'2124': {'id': 2124, 'uuid': '3a87d2ab-bc3f-4c97-bd2b-5d411d7e7814', 'act': 'lehrer', 'name': 'Lehrer'}}, 'preferred_username': 'developer', 'name': 'Developer', 'nickname': '', 'given_name': '', 'family_name': 'Developer', 'locale': 'de-DE'}
+❌ Zugang verweigert für: developer@kgs-pattensen.de (keine berechtigte Gruppe)
+172.71.164.230 - - [25/Nov/2025:11:59:17 +0000] "GET /oauth/callback?state=ZbHrkkLiM1y4xzh3OSIzMAd2wIIwCx&code=OWIwYWY2N2Q2MjQzMGRkYmY1Njg5OWQ5Nzk5MjlhODBkYjc4MDk1Y2FhYzU2MzdjYzU1NGQxZjdmYmU0ZTIyMw HTTP/1.1" 302 199 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1"
+172.71.164.231 - - [25/Nov/2025:11:59:17 +0000] "GET /login HTTP/1.1" 200 3530 "-" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1"
+172.71.164.230 - - [25/Nov/2025:11:59:17 +0000] "GET /static/style.css?v=20251125 HTTP/1.1" 200 0 "https://sportoase.app/login" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1"
+172.71.164.231 - - [25/Nov/2025:11:59:17 +0000] "GET /static/logo.png HTTP/1.1" 304 0 "https://sportoase.app/login" "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Mobile/15E148 Safari/604.1"
