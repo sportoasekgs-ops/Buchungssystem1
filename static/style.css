@@ -2377,18 +2377,16 @@ footer {
 }
 
 .slot-type-label {
-    font-size: 0.5rem;
+    font-size: 0.6rem;
     font-weight: 600;
-    padding: 0.1rem 0.2rem;
+    padding: 0.15rem 0.3rem;
     border-radius: 3px;
     text-transform: uppercase;
     letter-spacing: 0;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 65%;
-    flex-shrink: 1;
-    min-width: 0;
+    overflow: visible;
+    max-width: none;
+    flex-shrink: 0;
 }
 
 .slot-type-label.type-fest {
