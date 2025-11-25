@@ -1,6 +1,7 @@
 /* 
    SportOase Buchungssystem - Modern UI Design
    Modernes, cleanes Design inspiriert von zeitgemäßen Web-Apps
+   Mit Dark Mode Unterstützung
 */
 
 :root {
@@ -25,6 +26,41 @@
     --radius: 8px;
     --radius-lg: 12px;
     --radius-xl: 16px;
+    --login-gradient: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
+    --success-bg: #F0FDF4;
+    --success-text: #059669;
+    --error-bg: #FEF2F2;
+    --error-text: #DC2626;
+    --blocked-bg: #FEE2E2;
+    --blocked-text: #991B1B;
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+    --primary: #38bdf8;
+    --primary-dark: #7dd3fc;
+    --primary-light: #0c4a6e;
+    --accent: #34d399;
+    --accent-warn: #fbbf24;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-tertiary: #64748b;
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --border: #475569;
+    --border-light: #334155;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+    --login-gradient: linear-gradient(135deg, #1e3a5f 0%, #0c4a6e 100%);
+    --success-bg: #064e3b;
+    --success-text: #6ee7b7;
+    --error-bg: #450a0a;
+    --error-text: #fca5a5;
+    --blocked-bg: #450a0a;
+    --blocked-text: #fca5a5;
 }
 
 * {
@@ -142,7 +178,7 @@ h4 {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%);
+    background: var(--login-gradient);
     padding: 1rem;
 }
 
@@ -1963,4 +1999,299 @@ footer {
     .bulk-actions {
         flex-direction: column;
     }
+}
+
+/* ===== Dark Mode Toggle Switch ===== */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0.5rem;
+}
+
+.theme-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    background: var(--bg-tertiary);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid var(--border);
+}
+
+.theme-switch:hover {
+    border-color: var(--primary);
+}
+
+.theme-switch-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.theme-switch-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: var(--bg-primary);
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.theme-switch-slider::before {
+    content: '☀️';
+}
+
+.theme-switch-input:checked + .theme-switch-slider {
+    transform: translateX(24px);
+    background: var(--primary);
+}
+
+.theme-switch-input:checked + .theme-switch-slider::before {
+    content: '🌙';
+}
+
+[data-theme="dark"] .theme-switch {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+/* Dark Mode spezifische Anpassungen */
+[data-theme="dark"] .message-success {
+    border-color: var(--accent);
+    color: var(--success-text);
+    background: var(--success-bg);
+}
+
+[data-theme="dark"] .message-error {
+    border-color: #f87171;
+    color: var(--error-text);
+    background: var(--error-bg);
+}
+
+[data-theme="dark"] .period-fest .period-header {
+    background: #78350f;
+    color: #fcd34d;
+}
+
+[data-theme="dark"] .period-frei .period-header {
+    background: #064e3b;
+    color: #6ee7b7;
+}
+
+[data-theme="dark"] .period-blocked {
+    background: var(--blocked-bg) !important;
+}
+
+[data-theme="dark"] .blocked-header {
+    background: var(--blocked-bg);
+    color: var(--blocked-text);
+    border-color: #7f1d1d;
+}
+
+[data-theme="dark"] .blocked-text {
+    color: var(--error-text);
+}
+
+[data-theme="dark"] .type-badge.type-fest {
+    background: #78350f;
+    color: #fcd34d;
+}
+
+[data-theme="dark"] .type-badge.type-frei {
+    background: #1e3a5f;
+    color: #7dd3fc;
+}
+
+[data-theme="dark"] .capacity.full {
+    background: var(--blocked-bg);
+    color: var(--blocked-text);
+}
+
+[data-theme="dark"] .blocked-row {
+    background: var(--blocked-bg) !important;
+}
+
+[data-theme="dark"] .btn-remove {
+    background: var(--blocked-bg);
+    color: var(--error-text);
+}
+
+[data-theme="dark"] .credits-content {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .booking-info-box {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .btn-danger,
+[data-theme="dark"] .btn-block {
+    background: #dc2626;
+}
+
+[data-theme="dark"] .week-dates {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+/* Dark Mode - Weitere Komponenten */
+[data-theme="dark"] .dashboard-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0c4a6e 100%);
+}
+
+[data-theme="dark"] .btn-primary {
+    background: var(--primary);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .btn-primary:hover {
+    background: var(--primary-dark);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .btn-success {
+    background: var(--accent);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .btn-success:hover {
+    background: #6ee7b7;
+    color: #0f172a;
+}
+
+[data-theme="dark"] .slot-btn-primary {
+    background: var(--primary);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .slot-btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+[data-theme="dark"] .slot-btn-success {
+    background: var(--accent);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .slot-btn-success:hover {
+    background: #6ee7b7;
+}
+
+[data-theme="dark"] .week-nav-arrow {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .week-nav-arrow:hover {
+    background: var(--primary);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .admin-stats-card,
+[data-theme="dark"] .admin-quick-actions,
+[data-theme="dark"] .admin-section {
+    background: var(--bg-primary);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .admin-header {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .stat-number {
+    color: var(--primary-dark);
+}
+
+[data-theme="dark"] .quick-link {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .quick-link:hover {
+    background: var(--primary);
+    color: #0f172a;
+}
+
+[data-theme="dark"] .selected-date-info h3 {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0c4a6e 100%);
+}
+
+[data-theme="dark"] .notification-dropdown {
+    background: var(--bg-primary);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .notification-item {
+    border-color: var(--border-light);
+}
+
+[data-theme="dark"] .notification-item:hover {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .credits-button {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .credits-modal {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="dark"] .help-toggle {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .help-toggle:hover {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .help-card {
+    background: var(--bg-tertiary);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .schedule-table th {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .schedule-table tbody tr:hover {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .week-table th {
+    background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .date-selector {
+    background: var(--bg-primary);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .date-selector input {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border);
 }
