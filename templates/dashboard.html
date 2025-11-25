@@ -182,7 +182,7 @@
                                         {% set can_see_students = (user_role == 'admin') or (booking.teacher_id == current_user_id) %}
                                         {% for student in booking.students %}
                                         {% if can_see_students %}
-                                        <span class="mini-student">{{ student.name[:10] }}{% if student.name|length > 10 %}..{% endif %}</span>
+                                        <span class="mini-student">{{ student.name }} ({{ student.klasse }})</span>
                                         {% else %}
                                         <span class="mini-student blurred">***</span>
                                         {% endif %}
