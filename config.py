@@ -65,6 +65,26 @@ FREE_MODULES = [
     "Egal / flexibel"
 ]
 
+# Klassenliste für Dropdown-Auswahl (Schuljahr 2025/2026)
+SCHOOL_CLASSES = [
+    # Jahrgang 5
+    "5a", "5b", "5c", "5d", "5e", "5f",
+    # Jahrgang 6 (KES)
+    "6a (KES)", "6b (KES)", "6c (KES)", "6d (KES)", "6e (KES)", "6f (KES)",
+    # Jahrgang 7 (KES)
+    "7a (KES)", "7b (KES)", "7c (KES)", "7d (KES)", "7e (KES)", "7f (KES)",
+    # Jahrgang 8
+    "G8G1", "G8G2", "G8G3", "H8H", "R8R1", "R8R2",
+    # Jahrgang 9
+    "G9G1", "G9G2", "G9G3", "H9H", "R9R1", "R9R2", "R9R3",
+    # Jahrgang 10
+    "G10G1", "G10G2", "G10G3", "H10H", "R10R1", "R10R2",
+    # Jahrgang 11
+    "G11a", "G11b", "G11c",
+    # Jahrgang 12/13
+    "G12Q1", "G13Q2"
+]
+
 # Maximale Anzahl Schüler pro Stunde
 MAX_STUDENTS_PER_PERIOD = 5
 

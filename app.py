@@ -638,6 +638,13 @@ def dashboard():
 @login_required
 def book(date_str, period):
     """Seite zum Erstellen einer neuen Buchung"""
+    from config import SCHOOL_CLASSES
+    
+    # Hole den Benutzernamen aus der Session für das Formular
+    user_display_name = session.get('user_username', '')
+    # Falls E-Mail als Username verwendet wird, extrahiere den Namen
+    if '@' in user_display_name:
+        user_display_name = user_display_name.split('@')[0].replace('.', ' ').title()
     
     # Validiere Datum und Stunde
     try:
@@ -699,7 +706,9 @@ def book(date_str, period):
                                  period_info=period_info,
                                  period_time=PERIOD_TIMES[period],
                                  available_spots=available_spots,
-                                 free_modules=FREE_MODULES)
+                                 free_modules=FREE_MODULES,
+                                 user_name=user_display_name,
+                                 school_classes=SCHOOL_CLASSES)
         
         # Hole Anzahl der Schüler
         num_students = int(request.form.get('num_students', 1))
@@ -712,7 +721,9 @@ def book(date_str, period):
                                  period_info=period_info,
                                  period_time=PERIOD_TIMES[period],
                                  available_spots=available_spots,
-                                 free_modules=FREE_MODULES)
+                                 free_modules=FREE_MODULES,
+                                 user_name=user_display_name,
+                                 school_classes=SCHOOL_CLASSES)
         
         # Prüfe erneut verfügbare Plätze
         if num_students > available_spots:
@@ -733,7 +744,9 @@ def book(date_str, period):
                                      period_info=period_info,
                                      period_time=PERIOD_TIMES[period],
                                      available_spots=available_spots,
-                                     free_modules=FREE_MODULES)
+                                     free_modules=FREE_MODULES,
+                                     user_name=user_display_name,
+                                     school_classes=SCHOOL_CLASSES)
             
             # Prüfe auf Doppelbuchung
             double_booking = check_student_double_booking(name, klasse, date_str, period)
@@ -745,7 +758,9 @@ def book(date_str, period):
                                      period_info=period_info,
                                      period_time=PERIOD_TIMES[period],
                                      available_spots=available_spots,
-                                     free_modules=FREE_MODULES)
+                                     free_modules=FREE_MODULES,
+                                     user_name=user_display_name,
+                                     school_classes=SCHOOL_CLASSES)
             
             students.append({'name': name, 'klasse': klasse})
         
@@ -760,7 +775,9 @@ def book(date_str, period):
                                      period_info=period_info,
                                      period_time=PERIOD_TIMES[period],
                                      available_spots=available_spots,
-                                     free_modules=FREE_MODULES)
+                                     free_modules=FREE_MODULES,
+                                     user_name=user_display_name,
+                                     school_classes=SCHOOL_CLASSES)
             offer_label = selected_module
         else:
             offer_label = period_info['label']
@@ -868,7 +885,9 @@ def book(date_str, period):
                          period_info=period_info,
                          period_time=PERIOD_TIMES[period],
                          available_spots=available_spots,
-                         free_modules=FREE_MODULES)
+                         free_modules=FREE_MODULES,
+                         user_name=user_display_name,
+                         school_classes=SCHOOL_CLASSES)
 
 # Route: Admin-Bereich
 @app.route('/admin', methods=['GET', 'POST'])

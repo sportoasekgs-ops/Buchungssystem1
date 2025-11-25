@@ -26,12 +26,17 @@
         <h3>Ihre Angaben</h3>
         <div class="form-group">
             <label for="teacher_name">Ihr Name</label>
-            <input type="text" id="teacher_name" name="teacher_name" required placeholder="z.B. Max Mustermann">
+            <input type="text" id="teacher_name" name="teacher_name" required placeholder="z.B. Max Mustermann" value="{{ user_name }}">
         </div>
         
         <div class="form-group">
             <label for="teacher_class">Ihre Klasse</label>
-            <input type="text" id="teacher_class" name="teacher_class" required placeholder="z.B. 5a">
+            <select id="teacher_class" name="teacher_class" required>
+                <option value="">-- Bitte Klasse wählen --</option>
+                {% for klasse in school_classes %}
+                <option value="{{ klasse }}">{{ klasse }}</option>
+                {% endfor %}
+            </select>
         </div>
         
         <h3>Schüler</h3>
@@ -71,10 +76,19 @@
 </div>
 
 <script>
+// Klassenliste für Schüler-Dropdown
+const schoolClasses = {{ school_classes | tojson | safe }};
+
 function updateStudentFields() {
     const numStudents = parseInt(document.getElementById('num_students').value);
     const container = document.getElementById('studentFields');
     container.innerHTML = '';
+    
+    // Erstelle Optionen für Klassen-Dropdown
+    let classOptions = '<option value="">-- Klasse wählen --</option>';
+    schoolClasses.forEach(function(klasse) {
+        classOptions += `<option value="${klasse}">${klasse}</option>`;
+    });
     
     for (let i = 0; i < numStudents; i++) {
         const div = document.createElement('div');
@@ -86,7 +100,9 @@ function updateStudentFields() {
             </div>
             <div class="form-group">
                 <label for="student_class_${i}">Schüler ${i + 1} - Klasse</label>
-                <input type="text" id="student_class_${i}" name="student_class_${i}" required placeholder="z.B. 5a">
+                <select id="student_class_${i}" name="student_class_${i}" required>
+                    ${classOptions}
+                </select>
             </div>
         `;
         container.appendChild(div);
