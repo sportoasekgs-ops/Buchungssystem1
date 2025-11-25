@@ -1340,6 +1340,65 @@ def admin_unblock_slot():
     
     return redirect(request.referrer or url_for('dashboard'))
 
+@app.route('/admin/bulk_block', methods=['GET', 'POST'])
+@admin_required
+def admin_bulk_block():
+    """Admin kann mehrere Slots auf einmal sperren (z.B. für Ferien)"""
+    from models import bulk_block_slots, bulk_unblock_slots, get_all_blocked_slots
+    
+    blocked_slots = get_all_blocked_slots()
+    
+    if request.method == 'POST':
+        # CSRF-Token Validierung
+        csrf_token = request.form.get('csrf_token', '')
+        if not validate_csrf_token(csrf_token):
+            flash('Ungültiges Sicherheits-Token. Bitte versuchen Sie es erneut.', 'error')
+            return redirect(url_for('admin_bulk_block'))
+        
+        action = request.form.get('action', 'block')
+        start_date = request.form.get('start_date', '').strip()
+        end_date = request.form.get('end_date', '').strip()
+        reason = request.form.get('reason', 'Ferien').strip()
+        
+        # Stunden auswählen (Checkboxen)
+        periods = request.form.getlist('periods', type=int)
+        if not periods:
+            periods = None  # Alle Stunden
+        
+        # Validierung
+        if not start_date or not end_date:
+            flash('Bitte Start- und Enddatum angeben.', 'error')
+            return redirect(url_for('admin_bulk_block'))
+        
+        try:
+            start = datetime.strptime(start_date, '%Y-%m-%d')
+            end = datetime.strptime(end_date, '%Y-%m-%d')
+            if start > end:
+                flash('Startdatum muss vor dem Enddatum liegen.', 'error')
+                return redirect(url_for('admin_bulk_block'))
+        except:
+            flash('Ungültiges Datumsformat.', 'error')
+            return redirect(url_for('admin_bulk_block'))
+        
+        admin_id = session.get('user_id')
+        
+        if action == 'block':
+            result = bulk_block_slots(start_date, end_date, admin_id, reason, periods)
+            if result['success']:
+                flash(f"✅ {result['blocked_count']} Slots erfolgreich gesperrt ({result['skipped_count']} bereits gesperrt übersprungen).", 'success')
+            else:
+                flash(f"Fehler beim Sperren: {result.get('error', 'Unbekannter Fehler')}", 'error')
+        elif action == 'unblock':
+            result = bulk_unblock_slots(start_date, end_date, periods)
+            if result['success']:
+                flash(f"✅ {result['unblocked_count']} Slots erfolgreich freigegeben.", 'success')
+            else:
+                flash(f"Fehler beim Freigeben: {result.get('error', 'Unbekannter Fehler')}", 'error')
+        
+        return redirect(url_for('admin_bulk_block'))
+    
+    return render_template('admin_bulk_block.html', blocked_slots=blocked_slots)
+
 # ============================================================================
 # Notifications & Server-Sent Events (SSE) Routes
 # ============================================================================

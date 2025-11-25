@@ -1772,3 +1772,195 @@ footer {
 .btn-iserv svg {
     flex-shrink: 0;
 }
+
+/* ============================================
+   BULK-SPERRUNG ADMIN PAGE
+   ============================================ */
+
+.admin-page {
+    padding: 2rem 0;
+}
+
+.admin-page .admin-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.admin-page .admin-header h2 {
+    font-size: 1.75rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.admin-page .admin-header p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.admin-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.bulk-block-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.bulk-block-card {
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.bulk-block-card h3 {
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    font-size: 1.125rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.periods-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.period-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border-light);
+}
+
+.period-checkbox:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary);
+}
+
+.period-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+}
+
+.period-checkbox span {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.form-hint {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--text-tertiary);
+    font-size: 0.8125rem;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+}
+
+.bulk-actions .btn {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+}
+
+.blocked-slots-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.blocked-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.blocked-table th,
+.blocked-table td {
+    padding: 0.75rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.blocked-table th {
+    color: var(--text-tertiary);
+    font-weight: 500;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.blocked-table td {
+    color: var(--text-secondary);
+}
+
+.btn-xs {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: var(--radius-sm);
+}
+
+.no-data {
+    text-align: center;
+    color: var(--text-tertiary);
+    padding: 2rem;
+}
+
+.hint {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 0.8125rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 900px) {
+    .bulk-block-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .periods-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .bulk-actions {
+        flex-direction: column;
+    }
+}

@@ -480,6 +480,99 @@ def get_all_blocked_slots():
     blocked_slots = BlockedSlot.query.order_by(BlockedSlot.date.desc(), BlockedSlot.period).all()
     return [b.to_dict() for b in blocked_slots]
 
+def bulk_block_slots(start_date, end_date, admin_id, reason='Ferien', periods=None):
+    """
+    Blockiert alle Slots in einem Zeitraum (z.B. für Ferien).
+    
+    Args:
+        start_date: Startdatum (YYYY-MM-DD String)
+        end_date: Enddatum (YYYY-MM-DD String)
+        admin_id: ID des Admins der die Sperrung durchführt
+        reason: Grund für die Sperrung
+        periods: Liste der Stunden (1-6), None = alle Stunden
+    
+    Returns:
+        Dict mit 'success', 'blocked_count', 'skipped_count'
+    """
+    from datetime import datetime, timedelta
+    
+    try:
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+        end = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        if periods is None:
+            periods = [1, 2, 3, 4, 5, 6]
+        
+        weekday_map = {0: 'Mon', 1: 'Tue', 2: 'Wed', 3: 'Thu', 4: 'Fri', 5: 'Sat', 6: 'Sun'}
+        blocked_count = 0
+        skipped_count = 0
+        
+        current = start
+        while current <= end:
+            # Nur Wochentage (Montag-Freitag)
+            if current.weekday() < 5:
+                date_str = current.strftime('%Y-%m-%d')
+                weekday = weekday_map[current.weekday()]
+                
+                for period in periods:
+                    # Prüfe ob bereits blockiert
+                    if not is_slot_blocked(date_str, period):
+                        blocked = BlockedSlot(
+                            date=date_str,
+                            weekday=weekday,
+                            period=period,
+                            reason=reason,
+                            blocked_by=admin_id,
+                            created_at=datetime.now()
+                        )
+                        db.session.add(blocked)
+                        blocked_count += 1
+                    else:
+                        skipped_count += 1
+            
+            current += timedelta(days=1)
+        
+        db.session.commit()
+        return {'success': True, 'blocked_count': blocked_count, 'skipped_count': skipped_count}
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Bulk-Blockieren: {e}")
+        return {'success': False, 'error': str(e), 'blocked_count': 0, 'skipped_count': 0}
+
+def bulk_unblock_slots(start_date, end_date, periods=None):
+    """
+    Gibt alle blockierten Slots in einem Zeitraum wieder frei.
+    
+    Args:
+        start_date: Startdatum (YYYY-MM-DD String)
+        end_date: Enddatum (YYYY-MM-DD String)
+        periods: Liste der Stunden (1-6), None = alle Stunden
+    
+    Returns:
+        Dict mit 'success', 'unblocked_count'
+    """
+    try:
+        query = BlockedSlot.query.filter(
+            BlockedSlot.date >= start_date,
+            BlockedSlot.date <= end_date
+        )
+        
+        if periods:
+            query = query.filter(BlockedSlot.period.in_(periods))
+        
+        blocked_slots = query.all()
+        unblocked_count = len(blocked_slots)
+        
+        for slot in blocked_slots:
+            db.session.delete(slot)
+        
+        db.session.commit()
+        return {'success': True, 'unblocked_count': unblocked_count}
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Bulk-Freigeben: {e}")
+        return {'success': False, 'error': str(e), 'unblocked_count': 0}
+
 def create_notification(booking_id, message, notification_type='new_booking', recipient_role='admin', metadata=None):
     """Erstellt eine neue Benachrichtigung"""
     try:
