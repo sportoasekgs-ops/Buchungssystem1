@@ -835,13 +835,21 @@ def book(date_str, period):
             
             # Sende E-Mail-Bestätigung an Lehrer (nur wenn Checkbox aktiviert)
             send_email_confirmation = request.form.get('send_email_confirmation') == '1'
-            user_email = session.get('user_email', '')
+            
+            # Hole E-Mail direkt aus der Datenbank (zuverlässiger als Session)
+            user_id = session.get('user_id')
+            user_email = ''
+            if user_id:
+                user_data = get_user_by_id(user_id)
+                if user_data:
+                    user_email = user_data.get('email', '')
             
             print(f"[BUCHUNG] E-Mail-Checkbox aktiviert: {send_email_confirmation}")
-            print(f"[BUCHUNG] User E-Mail: {user_email}")
+            print(f"[BUCHUNG] User ID: {user_id}")
+            print(f"[BUCHUNG] User E-Mail (aus DB): {user_email}")
             
             if send_email_confirmation and user_email:
-                print(f"[BUCHUNG] Versuche E-Mail-Bestätigung zu senden...")
+                print(f"[BUCHUNG] Versuche E-Mail-Bestätigung an {user_email} zu senden...")
                 try:
                     from email_service import send_user_booking_confirmation
                     result = send_user_booking_confirmation(user_email, booking_data)
@@ -849,7 +857,7 @@ def book(date_str, period):
                 except Exception as e:
                     print(f"[BUCHUNG] Benutzer-E-Mail-Bestätigung fehlgeschlagen: {e}")
             else:
-                print(f"[BUCHUNG] Keine E-Mail gesendet (Checkbox: {send_email_confirmation}, Email: {bool(user_email)})")
+                print(f"[BUCHUNG] Keine E-Mail gesendet (Checkbox: {send_email_confirmation}, Email vorhanden: {bool(user_email)})")
             
             # Broadcast an SSE-Clients
             if notification_id:
@@ -873,6 +881,14 @@ def book(date_str, period):
         else:
             flash('Fehler beim Erstellen der Buchung.', 'error')
     
+    # Hole E-Mail aus der Datenbank für die Anzeige
+    display_user_email = ''
+    user_id = session.get('user_id')
+    if user_id:
+        user_data = get_user_by_id(user_id)
+        if user_data:
+            display_user_email = user_data.get('email', '')
+    
     return render_template('book.html',
                          date_str=date_str,
                          period=period,
@@ -881,7 +897,7 @@ def book(date_str, period):
                          available_spots=available_spots,
                          free_modules=FREE_MODULES,
                          user_name=user_display_name,
-                         user_email=session.get('user_email', ''),
+                         user_email=display_user_email,
                          school_classes=SCHOOL_CLASSES)
 
 # Hilfsfunktion: Prüft ob eine Buchung noch bearbeitet/gelöscht werden kann
