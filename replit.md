@@ -101,7 +101,8 @@ E-Mails werden über **Resend** versendet.
 
 **In Render:** Environment Variables setzen:
 - `RESEND_API_KEY` - Resend API-Key (von resend.com)
-- `RESEND_FROM_EMAIL` - Absenderadresse (z.B. `SportOase <noreply@yourdomain.com>`)
+
+Absender: `SportOase <onboarding@resend.dev>` (Resend Test-Adresse, keine Domain-Verifizierung nötig)
 
 ## Deployment
 
