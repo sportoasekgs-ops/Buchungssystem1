@@ -10,7 +10,7 @@ from config import (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM,
                     ADMIN_EMAIL)
 
 # =====================================================================
-#  SMTP SENDEN (STARTTLS, Port 587)
+#  SMTP SENDEN (SSL, Port 465)
 # =====================================================================
 
 
@@ -26,11 +26,9 @@ def send_email_smtp(to_email, subject, body_html, body_text=None):
             print("[EMAIL] WARNUNG: SMTP ist nicht korrekt konfiguriert.")
             return False
 
-        # STARTTLS (Port 587)
-        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=10)
-        server.ehlo()
-        server.starttls()
-        server.ehlo()
+        # SSL-Verbindung (Port 465) - besser für gehostete Umgebungen
+        print(f"[EMAIL] Verbinde mit {SMTP_HOST}:465 (SSL)...")
+        server = smtplib.SMTP_SSL(SMTP_HOST, 465, timeout=30)
         server.login(SMTP_USER, SMTP_PASS)
 
         msg = MIMEMultipart("alternative")
