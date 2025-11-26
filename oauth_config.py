@@ -37,9 +37,10 @@ def determine_user_role(userinfo):
     """
     Bestimmt die Rolle des Benutzers basierend auf IServ-Gruppen
     
-    Nur Benutzer mit diesen Gruppen haben Zugang:
-    - Administrator → admin
-    - Lehrer, Mitarbeiter, Pädagogische Mitarbeiter, Sozialpädagogen → teacher
+    Regelwerk:
+    - morelli.maurizio@kgs-pattensen.de → admin
+    - Schüler-Gruppe → KEIN Zugang
+    - Alle anderen mit @kgs-pattensen.de → teacher
     
     Args:
         userinfo: Dictionary mit Benutzerdaten von IServ
@@ -49,13 +50,13 @@ def determine_user_role(userinfo):
     """
     email = userinfo.get('email', '').lower().strip()
     
-    # Log für Debugging - zeige alle UserInfo-Daten
+    # Log für Debugging
     print(f"🔍 Bestimme Rolle für: {email}")
     print(f"   Komplette UserInfo: {userinfo}")
     
-    # Admin-E-Mail hat immer Zugang (Fallback für morelli.maurizio@kgs-pattensen.de)
+    # 1. Admin-E-Mail hat immer Admin-Zugang
     if is_admin_email(email):
-        print(f"   → Admin (E-Mail-Fallback)")
+        print(f"   → Admin (morelli.maurizio@kgs-pattensen.de)")
         return 'admin'
     
     # Sammle alle Gruppen-Namen aus verschiedenen möglichen Feldern
@@ -78,44 +79,23 @@ def determine_user_role(userinfo):
         print(f"   memberOf (raw): {member_of}")
         all_names.extend(extract_all_text(member_of))
     
-    # Lowercase für Vergleich, entferne leere Strings
+    # Lowercase für Vergleich
     all_names_lower = [n.lower().strip() for n in all_names if n and n.strip()]
     print(f"   Alle gefundenen Namen (lowercase): {all_names_lower}")
     
-    # Administrator-Gruppe hat Admin-Rechte
-    admin_terms = ['administrator', 'administratoren', 'admin']
-    for term in admin_terms:
-        for name in all_names_lower:
-            if term in name:
-                print(f"   → Admin (Match: '{term}' in '{name}')")
-                return 'admin'
-    
-    # Erlaubte Gruppen für Teacher-Zugang
-    # Prüfe ob einer der Namen ENTHÄLT einen erlaubten Begriff (Teilstring)
-    teacher_terms = [
-        'lehrer',
-        'mitarbeiter',      # Erfasst auch "Mitarbeitende", "Pädagogische Mitarbeiter"
-        'pädagog',          # Erfasst "Pädagogische Mitarbeiter", "Sozialpädagogen"
-        'sozial',           # Erfasst "Sozialpädagogen"
-        'beratung',
-        'fairplay',
-        'coach'
-    ]
-    
+    # 2. Schüler haben KEINEN Zugang
     for name in all_names_lower:
-        for term in teacher_terms:
-            if term in name:
-                print(f"   → Teacher (Match: '{term}' in '{name}')")
-                return 'teacher'
+        if 'schüler' in name or 'schueler' in name:
+            print(f"   → KEIN ZUGANG (Schüler-Gruppe erkannt: '{name}')")
+            return None
     
-    # Fallback: Wenn keine Gruppen erkannt wurden aber E-Mail von kgs-pattensen.de ist,
-    # und die OAuth-App nur für berechtigte Gruppen freigegeben ist, dann Zugang gewähren
+    # 3. Alle anderen mit @kgs-pattensen.de E-Mail bekommen Lehrer-Berechtigung
     if email.endswith('@kgs-pattensen.de'):
-        print(f"   → Teacher (Fallback: kgs-pattensen.de E-Mail, keine Gruppeninfo aber OAuth-App freigegeben)")
+        print(f"   → Teacher (kgs-pattensen.de E-Mail, kein Schüler)")
         return 'teacher'
     
-    # Kein Zugang für andere Benutzer (z.B. Schüler)
-    print(f"   → KEIN ZUGANG (keine berechtigte Gruppe gefunden)")
+    # Keine gültige Schul-E-Mail
+    print(f"   → KEIN ZUGANG (keine @kgs-pattensen.de E-Mail)")
     return None
 
 
