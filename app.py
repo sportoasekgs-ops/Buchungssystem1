@@ -891,6 +891,299 @@ def book(date_str, period):
                          user_name=user_display_name,
                          school_classes=SCHOOL_CLASSES)
 
+# Hilfsfunktion: Prüft ob eine Buchung noch bearbeitet/gelöscht werden kann
+def can_modify_booking(booking_date_str, period):
+    """
+    Prüft ob eine Buchung noch bearbeitet/gelöscht werden kann.
+    Änderungen sind bis 1 Stunde vor dem Termin möglich.
+    
+    Returns:
+        Tuple (can_modify: bool, reason: str or None)
+    """
+    try:
+        booking_date = datetime.strptime(booking_date_str, '%Y-%m-%d').date()
+        now = datetime.now(get_berlin_tz())
+        today = now.date()
+        
+        # Vergangenes Datum?
+        if booking_date < today:
+            return False, "Vergangener Termin"
+        
+        # Heute: Prüfe ob weniger als 1 Stunde bis zum Termin
+        if booking_date == today:
+            period_start_str = PERIOD_TIMES[period]['start']
+            period_start_time = datetime.strptime(period_start_str, '%H:%M').time()
+            period_start = datetime.combine(today, period_start_time)
+            period_start = get_berlin_tz().localize(period_start)
+            
+            # 1 Stunde vor Beginn
+            cutoff_time = period_start - timedelta(hours=1)
+            
+            if now >= cutoff_time:
+                return False, "Weniger als 1 Stunde vor Termin"
+        
+        return True, None
+    except Exception as e:
+        print(f"Fehler bei can_modify_booking: {e}")
+        return False, "Fehler bei der Prüfung"
+
+# Route: Meine Buchungen
+@app.route('/meine-buchungen')
+@login_required
+def meine_buchungen():
+    """Zeigt alle Buchungen des Benutzers (oder alle für Admin)"""
+    from models import get_all_bookings, Booking
+    
+    user_id = session['user_id']
+    is_admin = session.get('user_role') == 'admin'
+    
+    # Admin sieht alle Buchungen, normale Benutzer nur ihre eigenen
+    if is_admin:
+        all_bookings = get_all_bookings()
+    else:
+        bookings_query = Booking.query.filter_by(teacher_id=user_id).order_by(Booking.date.desc(), Booking.period).all()
+        all_bookings = [b.to_dict() for b in bookings_query]
+    
+    # Deutsche Wochentagsnamen
+    weekday_names_de = {
+        'Mon': 'Montag', 'Tue': 'Dienstag', 'Wed': 'Mittwoch',
+        'Thu': 'Donnerstag', 'Fri': 'Freitag', 'Sat': 'Samstag', 'Sun': 'Sonntag'
+    }
+    
+    bookings_display = []
+    for booking in all_bookings:
+        booking_dict = dict(booking)
+        students = json.loads(booking_dict['students_json']) if booking_dict.get('students_json') else []
+        
+        # Prüfe ob Buchung bearbeitet/gelöscht werden kann
+        can_modify, modify_reason = can_modify_booking(booking_dict['date'], booking_dict['period'])
+        
+        # Admin kann immer bearbeiten
+        if is_admin:
+            can_modify = True
+            modify_reason = None
+        
+        # Datum formatieren
+        try:
+            booking_date = datetime.strptime(booking_dict['date'], '%Y-%m-%d').date()
+            date_formatted = booking_date.strftime('%d.%m.%Y')
+            is_past = booking_date < datetime.now(get_berlin_tz()).date()
+        except:
+            date_formatted = booking_dict['date']
+            is_past = False
+        
+        # Created_at formatieren
+        created_at = booking_dict.get('created_at', '')
+        if created_at:
+            try:
+                if isinstance(created_at, str):
+                    created_dt = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                else:
+                    created_dt = created_at
+                created_at_formatted = created_dt.strftime('%d.%m.%Y %H:%M')
+            except:
+                created_at_formatted = str(created_at)
+        else:
+            created_at_formatted = '-'
+        
+        bookings_display.append({
+            'id': booking_dict['id'],
+            'date': booking_dict['date'],
+            'date_formatted': date_formatted,
+            'weekday': booking_dict['weekday'],
+            'weekday_name': weekday_names_de.get(booking_dict['weekday'], booking_dict['weekday']),
+            'period': booking_dict['period'],
+            'period_time': f"{PERIOD_TIMES[booking_dict['period']]['start']} - {PERIOD_TIMES[booking_dict['period']]['end']}",
+            'teacher_name': booking_dict.get('teacher_name', 'N/A'),
+            'teacher_class': booking_dict.get('teacher_class', 'N/A'),
+            'offer_label': booking_dict['offer_label'],
+            'offer_type': booking_dict['offer_type'],
+            'students': students,
+            'can_modify': can_modify,
+            'modify_reason': modify_reason,
+            'is_past': is_past,
+            'created_at_formatted': created_at_formatted
+        })
+    
+    return render_template('meine_buchungen.html',
+                         bookings=bookings_display,
+                         is_admin=is_admin)
+
+# Route: Eigene Buchung bearbeiten
+@app.route('/meine-buchungen/bearbeiten/<int:booking_id>', methods=['GET', 'POST'])
+@login_required
+def edit_my_booking(booking_id):
+    """Benutzer kann eigene Buchung bearbeiten (bis 1 Stunde vorher)"""
+    from models import get_booking_by_id, update_booking, Booking
+    
+    user_id = session['user_id']
+    is_admin = session.get('user_role') == 'admin'
+    
+    booking_row = get_booking_by_id(booking_id)
+    if not booking_row:
+        flash('Buchung nicht gefunden.', 'error')
+        return redirect(url_for('meine_buchungen'))
+    
+    booking = dict(booking_row)
+    
+    # Prüfe Berechtigung: Eigene Buchung oder Admin
+    if booking['teacher_id'] != user_id and not is_admin:
+        flash('Sie können nur Ihre eigenen Buchungen bearbeiten.', 'error')
+        return redirect(url_for('meine_buchungen'))
+    
+    # Prüfe ob Bearbeitung noch möglich ist (außer Admin)
+    if not is_admin:
+        can_modify, modify_reason = can_modify_booking(booking['date'], booking['period'])
+        if not can_modify:
+            flash(f'Diese Buchung kann nicht mehr bearbeitet werden: {modify_reason}', 'error')
+            return redirect(url_for('meine_buchungen'))
+    
+    # Deutsche Wochentagsnamen
+    weekday_names_de = {
+        'Mon': 'Montag', 'Tue': 'Dienstag', 'Wed': 'Mittwoch',
+        'Thu': 'Donnerstag', 'Fri': 'Freitag', 'Sat': 'Samstag', 'Sun': 'Sonntag'
+    }
+    
+    students = json.loads(booking['students_json']) if booking.get('students_json') else []
+    
+    # Berechne verfügbare Plätze (ohne die aktuelle Buchung)
+    current_students = count_students_for_period(booking['date'], booking['period'])
+    available_spots = MAX_STUDENTS_PER_PERIOD - (current_students - len(students))
+    
+    # Datum formatieren
+    try:
+        booking_date = datetime.strptime(booking['date'], '%Y-%m-%d').date()
+        date_formatted = booking_date.strftime('%d.%m.%Y')
+    except:
+        date_formatted = booking['date']
+    
+    if request.method == 'POST':
+        # CSRF-Token Validierung
+        csrf_token = request.form.get('csrf_token', '')
+        if not validate_csrf_token(csrf_token):
+            flash('Ungültiges Sicherheits-Token. Bitte versuchen Sie es erneut.', 'error')
+            return redirect(url_for('edit_my_booking', booking_id=booking_id))
+        
+        try:
+            num_students = int(request.form.get('num_students', 1))
+        except (ValueError, TypeError):
+            flash('Ungültige Schüleranzahl.', 'error')
+            return redirect(url_for('edit_my_booking', booking_id=booking_id))
+        
+        if num_students < 1 or num_students > available_spots:
+            flash(f'Bitte wählen Sie zwischen 1 und {available_spots} Schüler*innen.', 'error')
+            return redirect(url_for('edit_my_booking', booking_id=booking_id))
+        
+        # Sammle Schülerdaten
+        new_students = []
+        for i in range(num_students):
+            name = request.form.get(f'student_name_{i}', '').strip()
+            klasse = request.form.get(f'student_class_{i}', '').strip()
+            
+            if not name or not klasse:
+                flash('Bitte füllen Sie alle Schülerfelder aus.', 'error')
+                return redirect(url_for('edit_my_booking', booking_id=booking_id))
+            
+            # Prüfe auf Doppelbuchung (außer bei der aktuellen Buchung)
+            double_booking = check_student_double_booking(name, klasse, booking['date'], booking['period'], exclude_booking_id=booking_id)
+            if double_booking['is_booked']:
+                flash(f'⚠️ Doppelbuchung verhindert: {double_booking["booking_info"]}', 'error')
+                return redirect(url_for('edit_my_booking', booking_id=booking_id))
+            
+            new_students.append({'name': name, 'klasse': klasse})
+        
+        # Hole Modul-Wahl (nur bei freien Stunden)
+        if booking['offer_type'] == 'frei':
+            selected_module = request.form.get('module', '')
+            if selected_module not in FREE_MODULES:
+                flash('Bitte wählen Sie ein Modul.', 'error')
+                return redirect(url_for('edit_my_booking', booking_id=booking_id))
+            offer_label = selected_module
+        else:
+            offer_label = booking['offer_label']
+        
+        # Aktualisiere Buchung
+        if update_booking(
+            booking_id=booking_id,
+            date=booking['date'],
+            weekday=booking['weekday'],
+            period=booking['period'],
+            teacher_id=booking['teacher_id'],
+            students=new_students,
+            offer_type=booking['offer_type'],
+            offer_label=offer_label,
+            teacher_name=booking.get('teacher_name'),
+            teacher_class=booking.get('teacher_class')
+        ):
+            flash('Buchung erfolgreich aktualisiert!', 'success')
+            return redirect(url_for('meine_buchungen'))
+        else:
+            flash('Fehler beim Aktualisieren der Buchung.', 'error')
+    
+    # Booking-Objekt für Template vorbereiten
+    booking_display = {
+        'id': booking['id'],
+        'date': booking['date'],
+        'date_formatted': date_formatted,
+        'weekday': booking['weekday'],
+        'weekday_name': weekday_names_de.get(booking['weekday'], booking['weekday']),
+        'period': booking['period'],
+        'offer_label': booking['offer_label'],
+        'offer_type': booking['offer_type'],
+        'students': students
+    }
+    
+    return render_template('edit_my_booking.html',
+                         booking=booking_display,
+                         period_times=PERIOD_TIMES,
+                         free_modules=FREE_MODULES,
+                         school_classes=SCHOOL_CLASSES,
+                         max_students=available_spots,
+                         available_spots=available_spots - len(students))
+
+# Route: Eigene Buchung löschen
+@app.route('/meine-buchungen/loeschen/<int:booking_id>', methods=['POST'])
+@login_required
+def delete_my_booking(booking_id):
+    """Benutzer kann eigene Buchung löschen (bis 1 Stunde vorher)"""
+    from models import get_booking_by_id, delete_booking
+    
+    # CSRF-Token Validierung
+    csrf_token = request.form.get('csrf_token', '')
+    if not validate_csrf_token(csrf_token):
+        flash('Ungültiges Sicherheits-Token. Bitte versuchen Sie es erneut.', 'error')
+        return redirect(url_for('meine_buchungen'))
+    
+    user_id = session['user_id']
+    is_admin = session.get('user_role') == 'admin'
+    
+    booking_row = get_booking_by_id(booking_id)
+    if not booking_row:
+        flash('Buchung nicht gefunden.', 'error')
+        return redirect(url_for('meine_buchungen'))
+    
+    booking = dict(booking_row)
+    
+    # Prüfe Berechtigung: Eigene Buchung oder Admin
+    if booking['teacher_id'] != user_id and not is_admin:
+        flash('Sie können nur Ihre eigenen Buchungen löschen.', 'error')
+        return redirect(url_for('meine_buchungen'))
+    
+    # Prüfe ob Löschen noch möglich ist (außer Admin)
+    if not is_admin:
+        can_modify, modify_reason = can_modify_booking(booking['date'], booking['period'])
+        if not can_modify:
+            flash(f'Diese Buchung kann nicht mehr gelöscht werden: {modify_reason}', 'error')
+            return redirect(url_for('meine_buchungen'))
+    
+    # Lösche Buchung (mit Calendar-Callback wenn aktiviert)
+    if delete_booking(booking_id, delete_calendar_event_callback=delete_booking_event if is_calendar_enabled() else None):
+        flash('Buchung erfolgreich gelöscht.', 'success')
+    else:
+        flash('Buchung konnte nicht gelöscht werden.', 'error')
+    
+    return redirect(url_for('meine_buchungen'))
+
 # Route: Admin-Bereich
 @app.route('/admin', methods=['GET', 'POST'])
 @admin_required

@@ -36,8 +36,8 @@ The system utilizes PostgreSQL (Neon-backed via Replit) with Flask-SQLAlchemy 3.
 **Session Management**: Session-based authentication storing user ID, email, and role in Flask sessions. SESSION_SECRET environment variable is enforced for security (no fallback allowed).
 
 **Authorization**: Two roles are defined:
-- **Teachers**: Create bookings, view dashboard
-- **Admins**: Full teacher permissions plus user/booking management
+- **Teachers**: Create bookings, view dashboard, manage own bookings (edit/delete up to 1 hour before)
+- **Admins**: Full teacher permissions plus user/booking management, can edit/delete any booking at any time
 
 **Allowed Groups/Roles for Teacher Access**:
 - Lehrer
@@ -63,6 +63,8 @@ The UI features a modern card-based booking form design with improved visual hie
 - **Real-Time Notification System**: Integrated with Gmail API for email notifications and Server-Sent Events (SSE) for live updates to the admin dashboard, including unread counts and sound alerts.
 - **CSRF Protection**: All POST requests are protected with CSRF tokens.
 - **IServ SSO Integration**: OAuth2/OpenID Connect implementation using Authlib for seamless login through school IServ server. Supports automatic role assignment based on email domain. See `ISERV_INTEGRATION_SETUP.md` for configuration details.
+- **Meine Buchungen**: Dedicated page (`/meine-buchungen`) where teachers can view, edit, and delete their own bookings. Modifications are allowed up to 1 hour before the scheduled time. Admins can view and manage all bookings without time restrictions.
+- **Mobile-Optimized Week View**: 2-day horizontal scroll view on mobile devices with fixed period column for better readability.
 
 ## External Dependencies
 
