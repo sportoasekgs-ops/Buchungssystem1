@@ -82,13 +82,18 @@ const schoolClasses = {{ school_classes | tojson | safe }};
 function updateStudentFields() {
     const numStudents = parseInt(document.getElementById('num_students').value);
     const container = document.getElementById('studentFields');
+    const teacherClass = document.getElementById('teacher_class').value;
     container.innerHTML = '';
     
-    // Erstelle Optionen für Klassen-Dropdown
-    let classOptions = '<option value="">-- Klasse wählen --</option>';
-    schoolClasses.forEach(function(klasse) {
-        classOptions += `<option value="${klasse}">${klasse}</option>`;
-    });
+    // Erstelle Optionen für Klassen-Dropdown mit Vorauswahl der Lehrer-Klasse
+    function getClassOptions(selectedClass) {
+        let options = '<option value="">-- Klasse wählen --</option>';
+        schoolClasses.forEach(function(klasse) {
+            const isSelected = klasse === selectedClass ? 'selected' : '';
+            options += `<option value="${klasse}" ${isSelected}>${klasse}</option>`;
+        });
+        return options;
+    }
     
     for (let i = 0; i < numStudents; i++) {
         const div = document.createElement('div');
@@ -101,13 +106,27 @@ function updateStudentFields() {
             <div class="form-group">
                 <label for="student_class_${i}">Schüler*in ${i + 1} - Klasse</label>
                 <select id="student_class_${i}" name="student_class_${i}" required>
-                    ${classOptions}
+                    ${getClassOptions(teacherClass)}
                 </select>
             </div>
         `;
         container.appendChild(div);
     }
 }
+
+// Wenn Lehrer-Klasse geändert wird, aktualisiere alle Schüler-Klassen
+document.getElementById('teacher_class').addEventListener('change', function() {
+    const teacherClass = this.value;
+    const numStudents = parseInt(document.getElementById('num_students').value);
+    
+    // Setze alle Schüler-Klassen auf die Lehrer-Klasse
+    for (let i = 0; i < numStudents; i++) {
+        const studentClassSelect = document.getElementById('student_class_' + i);
+        if (studentClassSelect && teacherClass) {
+            studentClassSelect.value = teacherClass;
+        }
+    }
+});
 
 // Initialisiere mit 1 Schüler*in
 updateStudentFields();
