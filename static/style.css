@@ -1154,35 +1154,57 @@ details.help-section[open] .toggle-arrow {
     opacity: 1;
 }
 
-/* Mobile Buchen-Button */
-.mobile-book-btn {
-    display: none;
+/* Buchen-Button - immer sichtbar */
+.book-btn {
+    display: block;
     width: 100%;
-    padding: 0.6rem 0.75rem;
+    padding: 0.5rem 0.75rem;
     margin-top: 0.5rem;
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
     text-align: center;
     text-decoration: none;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     border-radius: var(--radius);
     box-shadow: 0 2px 4px rgba(233, 30, 99, 0.3);
     transition: all 0.2s;
 }
 
-.mobile-book-btn:hover {
+.book-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(233, 30, 99, 0.4);
+    background: linear-gradient(135deg, var(--primary-dark) 0%, #ad1457 100%);
 }
 
-.mobile-book-btn:active {
+.book-btn:active {
     transform: translateY(0);
 }
 
+/* Desktop: Kleinerer Button, aber sichtbar */
+@media (min-width: 769px) {
+    .book-btn {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.7rem;
+    }
+    
+    /* Slot-Card Hover-Effekt für bessere Klickbarkeit */
+    .clickable-slot {
+        cursor: pointer;
+    }
+    
+    .clickable-slot:hover .slot-card {
+        transform: scale(1.02);
+        box-shadow: 0 6px 16px rgba(233, 30, 99, 0.25);
+        border-color: var(--primary);
+    }
+}
+
+/* Mobile: Größerer Button */
 @media (max-width: 768px) {
-    .mobile-book-btn {
-        display: block;
+    .book-btn {
+        padding: 0.6rem 0.75rem;
+        font-size: 0.85rem;
     }
     
     .slot-availability .availability-text {

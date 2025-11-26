@@ -248,7 +248,7 @@
                                 </div>
                                 
                                 {% if slot.can_book %}
-                                <a href="{{ url_for('book', date_str=day.date, period=period) }}" class="mobile-book-btn">
+                                <a href="{{ url_for('book', date_str=day.date, period=period) }}" class="book-btn" data-book-url="{{ url_for('book', date_str=day.date, period=period) }}">
                                     📝 Jetzt buchen
                                 </a>
                                 {% endif %}
@@ -368,23 +368,34 @@ document.getElementById('blockModal').addEventListener('click', function(e) {
 </script>
 {% endif %}
 
-<!-- Desktop-Slot-Klick-Handler (für alle Benutzer) -->
+<!-- Slot-Klick-Handler (für alle Benutzer, Desktop & Mobile) -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Alle buchbaren Slots klickbar machen
     document.querySelectorAll('.clickable-slot').forEach(function(cell) {
+        // Klick auf die gesamte Zelle
         cell.addEventListener('click', function(e) {
-            if (window.innerWidth >= 768) {
-                if (e.target.tagName === 'BUTTON' || e.target.closest('button') || 
-                    e.target.tagName === 'FORM' || e.target.closest('form') ||
-                    e.target.classList.contains('mobile-book-btn')) {
-                    return;
-                }
-                var bookBtn = cell.querySelector('.mobile-book-btn');
-                if (bookBtn) {
-                    window.location.href = bookBtn.getAttribute('href');
+            // Ignoriere Klicks auf Buttons, Formulare und den Buchen-Link selbst
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button') || 
+                e.target.tagName === 'FORM' || e.target.closest('form') ||
+                e.target.tagName === 'A' || e.target.closest('a')) {
+                return;
+            }
+            
+            // Finde den Buchen-Link und navigiere dorthin
+            var bookBtn = cell.querySelector('.book-btn');
+            if (bookBtn) {
+                var bookUrl = bookBtn.getAttribute('href') || bookBtn.getAttribute('data-book-url');
+                if (bookUrl) {
+                    window.location.href = bookUrl;
                 }
             }
         });
+    });
+    
+    // Hover-Effekt für besseres visuelles Feedback
+    document.querySelectorAll('.clickable-slot .slot-card').forEach(function(card) {
+        card.style.cursor = 'pointer';
     });
 });
 </script>
