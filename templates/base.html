@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SportOase Buchungssystem{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20251126b">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20251126c">
     <meta http-equiv="refresh" content="600">
 </head>
 <body>
@@ -35,6 +35,12 @@
                     </div>
                 </div>
                 {% endif %}
+                <div class="user-info">
+                    <span class="user-name">{{ session.user_name or session.user_email }}</span>
+                    <span class="user-role-badge {% if session.user_role == 'admin' %}admin{% else %}teacher{% endif %}">
+                        {{ session.iserv_group or ('Admin' if session.user_role == 'admin' else 'Lehrkraft') }}
+                    </span>
+                </div>
                 <a href="{{ url_for('logout') }}">Logout</a>
             </nav>
         </div>

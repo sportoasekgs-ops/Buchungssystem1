@@ -143,6 +143,66 @@ body {
     color: var(--text-primary);
 }
 
+/* User Info in Navigation */
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    margin-left: 0.5rem;
+}
+
+.user-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-role-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+}
+
+.user-role-badge.admin {
+    background: var(--primary);
+    color: white;
+}
+
+.user-role-badge.teacher {
+    background: var(--accent);
+    color: white;
+}
+
+/* User Info - Mobile */
+@media (max-width: 768px) {
+    .user-info {
+        flex-direction: column;
+        gap: 0.2rem;
+        padding: 0.3rem 0.5rem;
+    }
+    
+    .user-name {
+        font-size: 0.7rem;
+        max-width: 100px;
+    }
+    
+    .user-role-badge {
+        font-size: 0.55rem;
+        padding: 0.1rem 0.4rem;
+    }
+}
+
 /* Main Content */
 main {
     min-height: 85vh;

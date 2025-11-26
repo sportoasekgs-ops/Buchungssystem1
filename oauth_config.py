@@ -268,7 +268,9 @@ def determine_user_role(userinfo):
         userinfo: Dictionary mit Benutzerdaten von IServ
     
     Returns:
-        'admin', 'teacher' oder None (kein Zugang)
+        Tuple: (role, iserv_group) wobei:
+        - role: 'admin', 'teacher' oder None (kein Zugang)
+        - iserv_group: Die erkannte IServ-Gruppenbezeichnung (z.B. "Pädagogische Mitarbeiter")
     """
     email = userinfo.get('email', '').lower().strip()
 
@@ -279,22 +281,25 @@ def determine_user_role(userinfo):
     # 1. Admin-E-Mail hat immer Admin-Zugang (wird nie blockiert)
     if is_admin_email(email):
         print(f"   → Admin (morelli.maurizio@kgs-pattensen.de)")
-        return 'admin'
+        return 'admin', 'Administrator'
 
     # Prüfe E-Mail-Domain
     if not email.endswith('@kgs-pattensen.de'):
         print(f"   → KEIN ZUGANG (keine @kgs-pattensen.de E-Mail)")
-        return None
+        return None, None
 
     # 2. Prüfe Autorisierung (Schüler/Lehrer-Erkennung)
     is_authorized, reason = check_user_authorization(userinfo)
 
     if is_authorized:
+        # Extrahiere die Gruppenbezeichnung aus dem reason
+        # Format: "Lehrer-Gruppe: gruppenname"
+        iserv_group = reason.replace("Lehrer-Gruppe: ", "").strip().title() if reason else "Lehrkraft"
         print(f"   → Teacher ({reason})")
-        return 'teacher'
+        return 'teacher', iserv_group
     else:
         print(f"   → KEIN ZUGANG ({reason})")
-        return None
+        return None, None
 
 
 def collect_membership_names(userinfo):

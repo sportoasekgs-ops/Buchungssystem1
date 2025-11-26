@@ -355,12 +355,14 @@ def oauth_callback():
             flash('Fehler beim Abrufen der Benutzerdaten von IServ.', 'error')
             return redirect(url_for('login'))
         
-        role = determine_user_role(userinfo)
+        # determine_user_role gibt jetzt (role, iserv_group) zurück
+        role, iserv_group = determine_user_role(userinfo)
         
         # Log OAuth-Daten für Debugging
         print(f"🔐 IServ Login: {email}")
         print(f"   Sub-ID: {sub}")
         print(f"   Rolle: {role}")
+        print(f"   IServ-Gruppe: {iserv_group}")
         print(f"   UserInfo: {userinfo}")
         
         # Prüfe ob Benutzer Zugang hat (nur Lehrer, Mitarbeitende, Administrator)
@@ -386,6 +388,8 @@ def oauth_callback():
         session['user_username'] = user['username']
         session['user_email'] = user['email']
         session['user_role'] = user['role']
+        session['user_name'] = name  # Vollständiger Name von IServ
+        session['iserv_group'] = iserv_group  # IServ-Gruppenbezeichnung
         
         flash(f'Willkommen, {name}!', 'success')
         return redirect(url_for('dashboard'))
