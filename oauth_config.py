@@ -13,13 +13,14 @@ def init_oauth(app):
     iserv_base_url = f'https://{iserv_domain}'
     
     # Registriere IServ als OAuth-Provider
+    # NUR grundlegende Scopes - keine groups/roles da IServ diese evtl. nicht erlaubt
     iserv = oauth.register(
         name='iserv',
         client_id=os.environ.get('ISERV_CLIENT_ID'),
         client_secret=os.environ.get('ISERV_CLIENT_SECRET'),
         server_metadata_url=f'{iserv_base_url}/.well-known/openid-configuration',
         client_kwargs={
-            'scope': 'openid profile email groups roles'
+            'scope': 'openid profile email'
         }
     )
     
@@ -35,11 +36,10 @@ def is_admin_email(email):
 
 def determine_user_role(userinfo):
     """
-    Bestimmt die Rolle des Benutzers basierend auf IServ-Gruppen
+    Bestimmt die Rolle des Benutzers - VEREINFACHT ohne Gruppen-Scope
     
-    Regelwerk:
+    Regelwerk (IServ kontrolliert Zugang über OAuth-App-Berechtigungen):
     - morelli.maurizio@kgs-pattensen.de → admin
-    - Schüler-Gruppe → KEIN Zugang
     - Alle anderen mit @kgs-pattensen.de → teacher
     
     Args:
@@ -52,46 +52,17 @@ def determine_user_role(userinfo):
     
     # Log für Debugging
     print(f"🔍 Bestimme Rolle für: {email}")
-    print(f"   Komplette UserInfo: {userinfo}")
+    print(f"   UserInfo: {userinfo}")
     
     # 1. Admin-E-Mail hat immer Admin-Zugang
     if is_admin_email(email):
         print(f"   → Admin (morelli.maurizio@kgs-pattensen.de)")
         return 'admin'
     
-    # Sammle alle Gruppen-Namen aus verschiedenen möglichen Feldern
-    all_names = []
-    
-    # Prüfe 'groups' Feld (Hauptfeld für IServ)
-    groups = userinfo.get('groups', [])
-    print(f"   groups (raw): {groups}")
-    all_names.extend(extract_all_text(groups))
-    
-    # Prüfe auch 'roles' Feld (falls vorhanden)
-    roles = userinfo.get('roles', [])
-    if roles:
-        print(f"   roles (raw): {roles}")
-        all_names.extend(extract_all_text(roles))
-    
-    # Prüfe 'memberOf' Feld (LDAP-Style)
-    member_of = userinfo.get('memberOf', [])
-    if member_of:
-        print(f"   memberOf (raw): {member_of}")
-        all_names.extend(extract_all_text(member_of))
-    
-    # Lowercase für Vergleich
-    all_names_lower = [n.lower().strip() for n in all_names if n and n.strip()]
-    print(f"   Alle gefundenen Namen (lowercase): {all_names_lower}")
-    
-    # 2. Schüler haben KEINEN Zugang
-    for name in all_names_lower:
-        if 'schüler' in name or 'schueler' in name:
-            print(f"   → KEIN ZUGANG (Schüler-Gruppe erkannt: '{name}')")
-            return None
-    
-    # 3. Alle anderen mit @kgs-pattensen.de E-Mail bekommen Lehrer-Berechtigung
+    # 2. Alle mit @kgs-pattensen.de E-Mail bekommen Lehrer-Berechtigung
+    # (Schüler-Filterung erfolgt in IServ über OAuth-App-Gruppeneinschränkungen)
     if email.endswith('@kgs-pattensen.de'):
-        print(f"   → Teacher (kgs-pattensen.de E-Mail, kein Schüler)")
+        print(f"   → Teacher (kgs-pattensen.de E-Mail)")
         return 'teacher'
     
     # Keine gültige Schul-E-Mail
