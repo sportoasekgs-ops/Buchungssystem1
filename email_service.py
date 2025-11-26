@@ -75,8 +75,11 @@ def send_email_resend(to_email, subject, body_html, body_text=None):
         
         resend.api_key = api_key
         
+        # Verwende immer die Resend Test-Adresse (keine Domain-Verifizierung nötig)
+        from_address = "SportOase <onboarding@resend.dev>"
+        
         params = {
-            "from": from_email or "SportOase <onboarding@resend.dev>",
+            "from": from_address,
             "to": [to_email],
             "subject": subject,
             "html": body_html,
@@ -85,6 +88,7 @@ def send_email_resend(to_email, subject, body_html, body_text=None):
         if body_text:
             params["text"] = body_text
         
+        print(f"[EMAIL] Sende von {from_address} an {to_email}...")
         result = resend.Emails.send(params)
         
         print(f"[EMAIL] Erfolgreich gesendet an {to_email} (ID: {result.get('id', 'unknown')})")
