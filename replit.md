@@ -2,83 +2,107 @@
 
 ## Overview
 
-SportOase Buchungssystem is a web-based booking management system designed for school sports facilities. It enables teachers to efficiently book time slots for students (1-5 per slot) and provides administrators with comprehensive tools for managing teachers and bookings. The system features a dynamic weekly schedule, capacity controls, and real-time email notifications for new bookings, ensuring smooth operation and effective resource allocation.
+SportOase Buchungssystem is a web-based booking management system for the school sports facility (SportOase) at KGS Pattensen (Ernst-Reuter-Schule). Teachers can book time slots for 1-5 students, view a color-coded weekly schedule, and manage their own bookings. Administrators have full control over all bookings, slot blocking, and user management. Authentication is handled via IServ SSO (OAuth2/OpenID Connect).
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+- Communication style: Simple, everyday language (German)
+- Design: Pink/Magenta color scheme (#E91E63) matching ERS school branding
+- Mobile-first: 1-day scrollable view on mobile, 5-day view on desktop
 
 ## System Architecture
 
 ### Frontend
 
-The frontend uses Jinja2 templates (Flask) for rendering, ensuring a consistent layout with a base template. The design features a simple black-and-white color scheme, is responsive for desktop and tablet devices, and avoids heavy JavaScript frameworks by using vanilla JS for dynamic elements. Key templates include login, dashboard (with a weekly overview), booking forms, and an admin panel.
+- **Templates**: Jinja2 (Flask) with base template for consistent layout
+- **Design**: Modern card-based UI with color-coded course slots
+- **Responsive**: Mobile-optimized with 1-day horizontal scroll view
+- **Key Pages**: Login, Dashboard (weekly overview), Booking form, Meine Buchungen, Admin panel
 
 ### Backend
 
-Built with Flask (Python 3.11), the backend implements session-based authentication, role-based access control (`@login_required`, `@admin_required`), and timezone-aware datetime handling (Europe/Berlin). The application structure separates concerns into `app.py` (routes), `config.py` (settings), `models.py` (database interaction), `email_service.py` (SMTP notifications), and `db_setup.py` (initialization). It features booking validation (60-minute advance, 5-student max), past date detection, dynamic module selection, and full CRUD operations for admin booking management with capacity awareness.
+- **Framework**: Flask (Python 3.11)
+- **Authentication**: IServ SSO (OAuth2/OpenID Connect via Authlib)
+- **Authorization**: Role-based (`@login_required`, `@admin_required`)
+- **Timezone**: Europe/Berlin (pytz)
+
+### File Structure
+
+```
+├── app.py              # Main application routes
+├── config.py           # Schedule, SMTP, settings
+├── models.py           # Database models (SQLAlchemy)
+├── database.py         # Database instance
+├── db_setup.py         # Database initialization
+├── oauth_config.py     # IServ OAuth configuration
+├── email_service.py    # SMTP email notifications
+├── templates/          # Jinja2 HTML templates
+├── static/             # CSS, logos
+├── render.yaml         # Render deployment config
+└── requirements.txt    # Python dependencies
+```
 
 ### Data Storage
 
-The system utilizes PostgreSQL (Neon-backed via Replit) with Flask-SQLAlchemy 3.1.1 for ORM. The schema includes `users` (credentials, roles, email), `bookings` (date, period, student data as JSON, offer type), `slot_names` (customizable names for fixed slots), and `blocked_slots` (admin-blocked time slots with reasons). Password hashing is handled by `werkzeug.security`.
+- **Database**: PostgreSQL (Neon-backed via Replit, Render in production)
+- **ORM**: Flask-SQLAlchemy 3.1.1
+- **Tables**: users, bookings, slot_names, blocked_slots, notifications
 
 ### Authentication & Authorization
 
-**Dual Authentication System**: The application supports both traditional password-based login and IServ SSO (Single Sign-On) via OAuth2/OpenID Connect.
+**IServ SSO**: OAuth2/OpenID Connect integration
+- Admin: `morelli.maurizio@kgs-pattensen.de` or IServ "Administrator" group
+- Teacher: IServ groups (Lehrer, Mitarbeitende, Pädagogische Mitarbeiter, etc.)
 
-- **Traditional Login**: Password-based authentication with hashed passwords (`werkzeug.security`).
-- **IServ SSO**: OAuth2/OpenID Connect integration using Authlib library for seamless login through school IServ credentials.
-  - Admin role: morelli.maurizio@kgs-pattensen.de
-  - Teacher role: All other IServ users
-  - Users are identified by email across both authentication methods
-  - OAuth users are stored with `oauth_provider='iserv'` and unique `oauth_id`
+**Roles**:
+- **Teachers**: Create bookings, edit/delete own bookings (up to 1 hour before)
+- **Admins**: Full access, no time restrictions
 
-**Session Management**: Session-based authentication storing user ID, email, and role in Flask sessions. SESSION_SECRET environment variable is enforced for security (no fallback allowed).
+### Key Features
 
-**Authorization**: Two roles are defined:
-- **Teachers**: Create bookings, view dashboard, manage own bookings (edit/delete up to 1 hour before)
-- **Admins**: Full teacher permissions plus user/booking management, can edit/delete any booking at any time
+- **Color-coded Slots**: Each course type has unique color and icon tag
+- **Today Highlighting**: Current day visually distinguished in week view
+- **Meine Buchungen**: Teachers view/edit/delete their own bookings
+- **Slot Blocking**: Admins can bulk-block slots for holidays
+- **CSRF Protection**: All POST requests protected
+- **E-Mail Notifications**: SMTP-based booking confirmations
 
-**Allowed Groups/Roles for Teacher Access**:
-- Lehrer
-- Mitarbeitende
-- Mitarbeiter
-- Pädagogische Mitarbeiter
-- Sozialpädagogen
-- Beratung
-- Fairplaycoaches
-- Any group containing: "lehrer", "mitarbeiter", "pädagog", "sozial"
+### Course Colors & Tags
 
-### UI/UX Decisions
+| Course | Color | Tag |
+|--------|-------|-----|
+| Wochenstart-Aktivierung | Orange | ☀️ Energie |
+| Konflikt-Reset | Violet | 🛡️ Reset |
+| Koordinationszirkel | Blue | 🎯 Fokus |
+| Sozialtraining | Teal | 👥 Team |
+| Mini-Fitness | Green | ⚡ Power |
+| Motorik-Parcours | Orange | 🏃 Bewegung |
+| Turnen + Balance | Pink | 🤸 Balance |
+| Atem & Reflexion | Cyan | 🌬️ Atem |
+| Bodyscan Light | Purple | 🧘 Scan |
+| Ruhezone | Mint | 🍃 Ruhe |
+| Freie Wahl | Gray | ⭐ Flexibel |
 
-The UI features a modern card-based booking form design with improved visual hierarchy, professional gradient backgrounds, and shadow effects. Past dates are visually greyed out, and blocked slots are distinctly marked. Admin panels include quick-links and modal-based editing for slot management. A real-time notification system with a bell icon, unread badge, dropdown menu, and sound alerts for new bookings enhances the admin experience.
+## Environment Variables
 
-### Technical Implementations & Feature Specifications
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `SESSION_SECRET` | Flask session secret (required) |
+| `ISERV_CLIENT_ID` | OAuth Client ID from IServ |
+| `ISERV_CLIENT_SECRET` | OAuth Client Secret from IServ |
+| `ISERV_DOMAIN` | `kgs-pattensen.de` |
+| `SMTP_USER` | Gmail address for notifications |
+| `SMTP_PASS` | Gmail App password |
 
-- **Past Date Protection**: Comprehensive backend validation and frontend visual cues prevent booking of past time slots.
-- **Modernized Booking Form**: Redesigned booking interface with a card-based layout, icons, and improved responsiveness.
-- **Admin Slot Blocking**: Admins can block/unblock time slots for special purposes, visually indicated on the dashboard.
-- **Interactive Week Overview**: Clickable slots in the weekly overview link directly to booking forms, showing availability.
-- **Admin Slot Name Management**: Admins can customize fixed slot names via a management interface, overriding `config.py` defaults.
-- **Real-Time Notification System**: Integrated with Gmail API for email notifications and Server-Sent Events (SSE) for live updates to the admin dashboard, including unread counts and sound alerts.
-- **CSRF Protection**: All POST requests are protected with CSRF tokens.
-- **IServ SSO Integration**: OAuth2/OpenID Connect implementation using Authlib for seamless login through school IServ server. Supports automatic role assignment based on email domain. See `ISERV_INTEGRATION_SETUP.md` for configuration details.
-- **Meine Buchungen**: Dedicated page (`/meine-buchungen`) where teachers can view, edit, and delete their own bookings. Modifications are allowed up to 1 hour before the scheduled time. Admins can view and manage all bookings without time restrictions.
-- **Mobile-Optimized Week View**: 2-day horizontal scroll view on mobile devices with fixed period column for better readability.
+## Deployment
 
-## External Dependencies
+Production deployment on Render.com:
+- Build: `pip install -r requirements.txt`
+- Start: `gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 main:app`
+- Database: PostgreSQL (internal)
 
-- **SMTP Email Service**: Configured via environment variables (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`, `ADMIN_EMAIL`) for automated booking notifications. Admin email: `sportoase.kg@gmail.com`.
-- **Python Packages**:
-    - `Flask` (Web framework)
-    - `Flask-SQLAlchemy` (ORM)
-    - `psycopg2-binary` (PostgreSQL adapter)
-    - `gunicorn` (Production WSGI server)
-    - `pytz` (Timezone handling)
-    - `werkzeug` (Password hashing)
-    - `email-validator` (Email validation)
-    - `Authlib` (OAuth2/OpenID Connect for IServ SSO)
-    - `smtplib`, `email.mime` (Standard library for email)
-- **Database**: PostgreSQL (Neon-backed on Replit, deployed to Render). Schema includes OAuth fields (`oauth_provider`, `oauth_id`) for SSO support.
-- **Gmail API**: Used for enhanced email notifications through Replit's Gmail connector.
-- **IServ OAuth**: Requires configuration in IServ admin panel (`Verwaltung → System → Single-Sign-On`). Environment variables: `ISERV_BASE_URL`, `ISERV_CLIENT_ID`, `ISERV_CLIENT_SECRET`, `SESSION_SECRET`.
+## Support
+
+- **E-Mail**: morelli.maurizio@kgs-pattensen.de
+- **Telefon**: 0151 40349764
