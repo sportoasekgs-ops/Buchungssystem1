@@ -14,15 +14,15 @@ def init_oauth(app):
     iserv_base_url = f'https://{iserv_domain}'
 
     # Registriere IServ als OAuth-Provider
-    # Scopes: openid, profile, email + groups für Schüler-Erkennung
-    # Falls IServ 'groups' nicht unterstützt, werden die Basisinfos trotzdem geliefert
+    # Scopes: openid, profile, email, groups, roles für Rollen-Erkennung
+    # IServ liefert Gruppeninformationen je nach Konfiguration in groups oder roles
     iserv = oauth.register(
         name='iserv',
         client_id=os.environ.get('ISERV_CLIENT_ID'),
         client_secret=os.environ.get('ISERV_CLIENT_SECRET'),
         server_metadata_url=
         f'{iserv_base_url}/.well-known/openid-configuration',
-        client_kwargs={'scope': 'openid profile email groups'})
+        client_kwargs={'scope': 'openid profile email groups roles'})
 
     return oauth, iserv
 
@@ -51,11 +51,17 @@ def check_user_authorization(userinfo):
     Returns:
         Tuple (is_authorized: bool, reason: str)
     """
-    # Extrahiere alle Texte aus der userinfo (inkl. Gruppen, Rollen etc.)
+    # PRIMÄR: Extrahiere Mitgliedschaften aus roles/groups Feldern (für IServ)
+    membership_names = collect_membership_names(userinfo)
+    
+    # SEKUNDÄR: Extrahiere alle Texte als Fallback
     all_texts = extract_all_text(userinfo)
     all_texts_lower = [
         t.lower().strip() for t in all_texts if isinstance(t, str)
     ]
+    
+    # Kombiniere beide Listen für vollständige Prüfung
+    all_texts_lower = list(set(membership_names + all_texts_lower))
 
     print(f"   📋 Extrahierte Texte: {all_texts_lower[:20]}..."
           )  # Erste 20 für Debug
@@ -273,6 +279,56 @@ def determine_user_role(userinfo):
     else:
         print(f"   → KEIN ZUGANG ({reason})")
         return None
+
+
+def collect_membership_names(userinfo):
+    """
+    Extrahiert ALLE Gruppen- und Rollennamen aus IServ userinfo.
+    Speziell für IServ-Format: Durchsucht roles, roleAssignments, groups, memberOf
+    und extrahiert displayName/name Felder aus verschachtelten Objekten.
+    
+    Args:
+        userinfo: Dictionary mit Benutzerdaten von IServ
+    
+    Returns:
+        Liste von normalisierten Gruppennamen (lowercase)
+    """
+    membership_names = []
+    
+    # Felder, die Gruppeninformationen enthalten können
+    membership_fields = ['roles', 'roleAssignments', 'groups', 'memberOf', 'group', 'role']
+    
+    for field in membership_fields:
+        if field not in userinfo:
+            continue
+            
+        data = userinfo[field]
+        
+        # Wenn es ein String ist, direkt hinzufügen
+        if isinstance(data, str):
+            membership_names.append(data.lower().strip())
+            
+        # Wenn es eine Liste ist
+        elif isinstance(data, list):
+            for item in data:
+                if isinstance(item, str):
+                    membership_names.append(item.lower().strip())
+                elif isinstance(item, dict):
+                    # IServ liefert oft {displayName: "...", name: "...", id: "..."}
+                    for name_field in ['displayName', 'display_name', 'name', 'title', 'label']:
+                        if name_field in item and isinstance(item[name_field], str):
+                            membership_names.append(item[name_field].lower().strip())
+                            
+        # Wenn es ein Dictionary ist
+        elif isinstance(data, dict):
+            for name_field in ['displayName', 'display_name', 'name', 'title', 'label']:
+                if name_field in data and isinstance(data[name_field], str):
+                    membership_names.append(data[name_field].lower().strip())
+    
+    # Debug-Ausgabe
+    print(f"   🏷️ Extrahierte Mitgliedschaften: {membership_names}")
+    
+    return membership_names
 
 
 def extract_all_text(data):
