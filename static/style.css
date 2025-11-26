@@ -559,6 +559,23 @@ details.help-section[open] .toggle-arrow {
     line-height: 1.5;
 }
 
+.thanks-content {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+.thanks-content p {
+    margin: 0 0 1rem 0;
+}
+
+.thanks-content p:last-child {
+    margin-bottom: 0;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-light);
+    color: var(--primary);
+}
+
 .type-badge {
     padding: 0.25rem 0.75rem;
     border-radius: var(--radius-sm);
