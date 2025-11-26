@@ -1,10 +1,7 @@
-# Konfigurationsdatei für die SportOase-Anwendung
-# Diese Datei enthält alle wichtigen Einstellungen wie Stundenpläne und Zeitangaben
-
 import os
 from dotenv import load_dotenv
 
-# .env laden
+# .env Datei laden
 load_dotenv()
 
 # =====================================================================
@@ -35,11 +32,11 @@ PERIOD_TIMES = {
     6: {
         "start": "12:25",
         "end": "13:10"
-    }
+    },
 }
 
 # =====================================================================
-#  Feste Angebote pro Wochentag
+#  Feste Angebote
 # =====================================================================
 
 FIXED_OFFERS = {
@@ -62,62 +59,93 @@ FIXED_OFFERS = {
         2: "Atem & Reflexion",
         4: "Bodyscan Light",
         5: "Ruhezone / Entspannung"
-    }
+    },
 }
 
 # =====================================================================
-#  Frei wählbare Module
+#  Module
 # =====================================================================
 
 FREE_MODULES = [
-    "Aktivierung", "Regulation / Entspannung", "Konflikt-Reset",
-    "Egal / flexibel"
+    "Aktivierung",
+    "Regulation / Entspannung",
+    "Konflikt-Reset",
+    "Egal / flexibel",
 ]
 
 # =====================================================================
-#  Klassenliste
+#  Klassen
 # =====================================================================
 
 SCHOOL_CLASSES = [
-    "5a", "5b", "5c", "5d", "5e", "5f", "6a (KES)", "6b (KES)", "6c (KES)",
-    "6d (KES)", "6e (KES)", "6f (KES)", "7a (KES)", "7b (KES)", "7c (KES)",
-    "7d (KES)", "7e (KES)", "7f (KES)", "G8G1", "G8G2", "G8G3", "H8H", "R8R1",
-    "R8R2", "G9G1", "G9G2", "G9G3", "H9H", "R9R1", "R9R2", "R9R3", "G10G1",
-    "G10G2", "G10G3", "H10H", "R10R1", "R10R2", "G11a", "G11b", "G11c",
-    "G12Q1", "G13Q2"
+    "5a",
+    "5b",
+    "5c",
+    "5d",
+    "5e",
+    "5f",
+    "6a (KES)",
+    "6b (KES)",
+    "6c (KES)",
+    "6d (KES)",
+    "6e (KES)",
+    "6f (KES)",
+    "7a (KES)",
+    "7b (KES)",
+    "7c (KES)",
+    "7d (KES)",
+    "7e (KES)",
+    "7f (KES)",
+    "G8G1",
+    "G8G2",
+    "G8G3",
+    "H8H",
+    "R8R1",
+    "R8R2",
+    "G9G1",
+    "G9G2",
+    "G9G3",
+    "H9H",
+    "R9R1",
+    "R9R2",
+    "R9R3",
+    "G10G1",
+    "G10G2",
+    "G10G3",
+    "H10H",
+    "R10R1",
+    "R10R2",
+    "G11a",
+    "G11b",
+    "G11c",
+    "G12Q1",
+    "G13Q2",
 ]
 
 # =====================================================================
-#  Limitierungen / Regeln
+#  Regeln
 # =====================================================================
 
 MAX_STUDENTS_PER_PERIOD = 5
 BOOKING_ADVANCE_MINUTES = 60
 
 # =====================================================================
-#  SMTP / Mail – ISERV-KOMPATIBEL
+#  SMTP (IServ) — Port 587 + STARTTLS (empfohlen)
 # =====================================================================
 
-# Bei IServ gilt IMMER:
-# - Port 465
-# - SMTP_SSL (kein STARTTLS auf Port 587)
+# !!! Für dich relevant !!!
+# Dein SMTP-Server lautet: kgs-pattensen.de
 
-SMTP_HOST = os.getenv("SMTP_HOST", "")  # z.B. "smtp.kgs-pattensen.de"
-SMTP_PORT = int(os.getenv("SMTP_PORT", 465))  # IMMER 465 für IServ
-SMTP_USER = os.getenv("SMTP_USER", "")  # vollständige IServ-Mailadresse
-SMTP_PASS = os.getenv("SMTP_PASS", "")  # das IServ-Passwort
-SMTP_FROM = os.getenv("SMTP_FROM",
-                      SMTP_USER)  # sinnvollerweise = IServ-Adresse
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", SMTP_USER)  # Fallback: gleiche Adresse
+SMTP_HOST = os.getenv("SMTP_HOST", "kgs-pattensen.de")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 587))  # STARTTLS
+SMTP_USER = os.getenv("SMTP_USER", "")  # vollständige IServ-Adresse
+SMTP_PASS = os.getenv("SMTP_PASS", "")  # IServ-Login
+SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USER)
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", SMTP_USER)
 
 # =====================================================================
-#  Flask Session Key
+#  Flask-Key / DB
 # =====================================================================
 
 SECRET_KEY = os.getenv("SESSION_SECRET", "dev-secret-key-change-in-production")
-
-# =====================================================================
-#  Datenbank
-# =====================================================================
-
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://localhost/sportoase")
