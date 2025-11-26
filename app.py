@@ -833,6 +833,19 @@ def book(date_str, period):
             except Exception as e:
                 print(f"E-Mail-Benachrichtigung fehlgeschlagen: {e}")
             
+            # Sende E-Mail-Bestätigung an Benutzer (wenn gewünscht und nicht Admin)
+            send_email_confirmation = request.form.get('send_email_confirmation') == '1'
+            user_role = session.get('user_role')
+            user_email = session.get('user_email', '')
+            
+            if send_email_confirmation and user_role != 'admin' and user_email:
+                try:
+                    from email_service import send_user_booking_confirmation
+                    send_user_booking_confirmation(user_email, booking_data)
+                    print(f"Buchungsbestätigung gesendet an: {user_email}")
+                except Exception as e:
+                    print(f"Benutzer-E-Mail-Bestätigung fehlgeschlagen: {e}")
+            
             # Broadcast an SSE-Clients
             if notification_id:
                 unread_count = get_unread_notification_count(recipient_role='admin')
@@ -863,6 +876,7 @@ def book(date_str, period):
                          available_spots=available_spots,
                          free_modules=FREE_MODULES,
                          user_name=user_display_name,
+                         user_email=session.get('user_email', ''),
                          school_classes=SCHOOL_CLASSES)
 
 # Hilfsfunktion: Prüft ob eine Buchung noch bearbeitet/gelöscht werden kann

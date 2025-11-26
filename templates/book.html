@@ -68,6 +68,17 @@
         </div>
         {% endif %}
         
+        <div class="form-group email-confirmation-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="send_email_confirmation" id="send_email_confirmation" value="1">
+                <span class="checkbox-text">
+                    <span class="checkbox-icon">📧</span>
+                    E-Mail-Bestätigung an meine Adresse senden
+                </span>
+            </label>
+            <p class="hint-text">Eine Bestätigung mit allen Buchungsdetails wird an {{ user_email }} gesendet.</p>
+        </div>
+        
         <div style="display: flex; gap: 1rem; margin-top: 2rem;">
             <a href="{{ url_for('dashboard', date=date_str) }}" class="btn btn-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">Buchung abschließen</button>

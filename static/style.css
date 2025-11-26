@@ -270,6 +270,49 @@ h4 {
     box-shadow: 0 0 0 3px var(--primary-light);
 }
 
+/* Email Confirmation Checkbox */
+.email-confirmation-group {
+    background: var(--bg-tertiary);
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-top: 1.5rem;
+    border: 1px solid var(--border);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.checkbox-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.checkbox-icon {
+    font-size: 1.1rem;
+}
+
+.hint-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    margin-left: 2rem;
+}
+
 /* Buttons - Modern Minimal */
 .btn, button[type="submit"] {
     display: inline-flex;
@@ -881,11 +924,27 @@ details.help-section[open] .toggle-arrow {
     background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(240,240,240,0.9) 100%);
     border-left: 4px solid;
     transition: all 0.2s;
+    overflow: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .slot-card:hover {
     transform: scale(1.02);
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Clickable slot for desktop booking */
+@media (min-width: 768px) {
+    .clickable-slot {
+        cursor: pointer;
+    }
+    
+    .clickable-slot:hover .slot-card {
+        transform: scale(1.03);
+        box-shadow: 0 6px 16px rgba(233, 30, 99, 0.2);
+        border-color: var(--primary);
+    }
 }
 
 .slot-course-name {
@@ -897,6 +956,8 @@ details.help-section[open] .toggle-arrow {
     line-height: 1.2;
     text-transform: uppercase;
     letter-spacing: 0.02em;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .slot-students-list {
@@ -1091,6 +1152,43 @@ details.help-section[open] .toggle-arrow {
 
 .slot-card:hover .slot-block-mini {
     opacity: 1;
+}
+
+/* Mobile Buchen-Button */
+.mobile-book-btn {
+    display: none;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    margin-top: 0.5rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-radius: var(--radius);
+    box-shadow: 0 2px 4px rgba(233, 30, 99, 0.3);
+    transition: all 0.2s;
+}
+
+.mobile-book-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(233, 30, 99, 0.4);
+}
+
+.mobile-book-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .mobile-book-btn {
+        display: block;
+    }
+    
+    .slot-availability .availability-text {
+        display: block;
+        color: var(--text-secondary);
+    }
 }
 
 /* Booking Info - Optimized */

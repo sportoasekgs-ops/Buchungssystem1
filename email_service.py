@@ -160,3 +160,124 @@ def send_booking_notification(booking_data, admin_email=None):
     except Exception as e:
         print(f"Fehler beim Senden der Buchungsbenachrichtigung: {e}")
         return False
+
+
+def create_user_confirmation_email(booking_data):
+    """Erstellt eine Bestätigungs-E-Mail für den buchenden Benutzer"""
+    teacher_name = booking_data.get('teacher_name', 'Unbekannt')
+    teacher_class = booking_data.get('teacher_class', '')
+    date = booking_data.get('date', '')
+    weekday = booking_data.get('weekday', '')
+    period = booking_data.get('period', '')
+    offer_label = booking_data.get('offer_label', '')
+    offer_type = booking_data.get('offer_type', '')
+    
+    students = []
+    try:
+        students_json = booking_data.get('students_json', '[]')
+        if isinstance(students_json, str):
+            students = json.loads(students_json)
+        else:
+            students = students_json
+    except:
+        students = []
+    
+    students_count = len(students)
+    
+    if students:
+        students_list_html = '<br>'.join([f"• {s['name']} (Klasse {s['klasse']})" for s in students])
+    else:
+        students_list_html = 'Keine Schüler angegeben'
+    
+    subject = f"Buchungsbestätigung: {offer_label} am {date}"
+    
+    body_html = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); 
+                       color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }}
+            .header h2 {{ margin: 0; }}
+            .content {{ background: #f8f9fa; padding: 20px; border-radius: 8px; }}
+            .info-row {{ margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #E91E63; }}
+            .label {{ font-weight: bold; color: #E91E63; }}
+            .students-section {{ margin-top: 15px; padding: 15px; background: white; border-radius: 4px; }}
+            .footer {{ margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; 
+                      text-align: center; color: #666; font-size: 12px; }}
+            .badge {{ background: #E91E63; color: white; padding: 4px 10px; 
+                     border-radius: 12px; font-size: 11px; margin-left: 8px; }}
+            .success-box {{ background: #E8F5E9; border: 1px solid #4CAF50; color: #2E7D32; 
+                           padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2>SportOase - Buchungsbestätigung</h2>
+            </div>
+            <div class="success-box">
+                <strong>Ihre Buchung wurde erfolgreich gespeichert!</strong>
+            </div>
+            <div class="content">
+                <div class="info-row">
+                    <span class="label">Lehrkraft:</span> {teacher_name}
+                    {f' (Klasse {teacher_class})' if teacher_class else ''}
+                </div>
+                <div class="info-row">
+                    <span class="label">Datum:</span> {date} ({weekday})
+                </div>
+                <div class="info-row">
+                    <span class="label">Stunde:</span> {period}. Stunde
+                </div>
+                <div class="info-row">
+                    <span class="label">Angebot:</span> {offer_label}
+                    <span class="badge">{offer_type.upper()}</span>
+                </div>
+                <div class="students-section">
+                    <div><span class="label">Angemeldete Schüler ({students_count}):</span></div>
+                    <div style="margin-top: 10px; margin-left: 10px;">
+                        {students_list_html}
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <p>Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de</p>
+                <p>SportOase - Ernst-Reuter-Schule Pattensen</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    body_text = f"""
+SportOase - Buchungsbestätigung
+
+Ihre Buchung wurde erfolgreich gespeichert!
+
+Lehrkraft: {teacher_name} {f'(Klasse {teacher_class})' if teacher_class else ''}
+Datum: {date} ({weekday})
+Stunde: {period}. Stunde
+Angebot: {offer_label} ({offer_type.upper()})
+
+Angemeldete Schüler ({students_count}):
+{chr(10).join([f"- {s['name']} (Klasse {s['klasse']})" for s in students])}
+
+---
+Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
+SportOase - Ernst-Reuter-Schule Pattensen
+    """
+    
+    return subject, body_html, body_text
+
+
+def send_user_booking_confirmation(user_email, booking_data):
+    """Sendet Buchungsbestätigung an den buchenden Benutzer"""
+    try:
+        subject, body_html, body_text = create_user_confirmation_email(booking_data)
+        return send_email_smtp(user_email, subject, body_html, body_text)
+        
+    except Exception as e:
+        print(f"Fehler beim Senden der Benutzer-Bestätigung: {e}")
+        return False
