@@ -104,6 +104,7 @@ class BlockedSlot(db.Model):
     weekday = db.Column(db.String(3), nullable=False)
     period = db.Column(db.Integer, nullable=False)
     reason = db.Column(db.String(200), default='Beratung')
+    icon = db.Column(db.String(10), default='🔧')
     blocked_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     
@@ -119,6 +120,7 @@ class BlockedSlot(db.Model):
             'weekday': self.weekday,
             'period': self.period,
             'reason': self.reason,
+            'icon': self.icon or '🔧',
             'blocked_by': self.blocked_by,
             'created_at': self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at
         }
@@ -428,7 +430,7 @@ def get_blocked_slot(date, period):
     blocked = BlockedSlot.query.filter_by(date=date, period=period).first()
     return blocked.to_dict() if blocked else None
 
-def block_slot(date, weekday, period, admin_id, reason='Beratung'):
+def block_slot(date, weekday, period, admin_id, reason='Beratung', icon='🔧'):
     """Blockiert einen Slot für Beratungsgespräche (nur Admin)"""
     try:
         if is_slot_blocked(date, period):
@@ -439,6 +441,7 @@ def block_slot(date, weekday, period, admin_id, reason='Beratung'):
             weekday=weekday,
             period=period,
             reason=reason,
+            icon=icon,
             blocked_by=admin_id,
             created_at=datetime.now()
         )

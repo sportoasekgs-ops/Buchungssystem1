@@ -515,6 +515,7 @@ def dashboard():
             'time_message': time_message,
             'blocked': blocked_slot,
             'blocked_reason': blocked_slot.get('reason', 'Beratung') if blocked_slot else None,
+            'blocked_icon': blocked_slot.get('icon', '🔧') if blocked_slot else None,
             'is_past': is_past,
             'is_weekend': is_weekend
         })
@@ -603,6 +604,7 @@ def dashboard():
                 'can_book': can_book,
                 'blocked': blocked_slot,
                 'blocked_reason': blocked_slot.get('reason', 'Beratung') if blocked_slot else None,
+                'blocked_icon': blocked_slot.get('icon', '🔧') if blocked_slot else None,
                 'is_past': is_past,
                 'is_weekend': is_weekend
             })
@@ -1552,10 +1554,16 @@ def admin_block_slot():
     date_str = request.form.get('date', '').strip()
     period = request.form.get('period', type=int)
     reason = request.form.get('reason', 'Beratung').strip()
+    icon = request.form.get('icon', '🔧').strip()
     
     # Validiere Grund-Länge
     if reason and len(reason) > 200:
         reason = reason[:200]
+    
+    # Validiere Icon
+    allowed_icons = ['🔧', '💬', '📚', '🏖️', '🎉', '⚠️']
+    if icon not in allowed_icons:
+        icon = '🔧'
     
     if not date_str or not period:
         flash('Ungültige Slot-Daten.', 'error')
@@ -1572,7 +1580,7 @@ def admin_block_slot():
         flash('Dieser Slot ist bereits blockiert.', 'warning')
     else:
         admin_id = session.get('user_id')
-        if block_slot(date_str, weekday, period, admin_id, reason):
+        if block_slot(date_str, weekday, period, admin_id, reason, icon):
             flash(f'Slot erfolgreich für {reason} blockiert.', 'success')
         else:
             flash('Fehler beim Blockieren des Slots.', 'error')
