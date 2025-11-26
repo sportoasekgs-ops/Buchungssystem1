@@ -35,12 +35,11 @@ def is_admin_email(email):
 
 def determine_user_role(userinfo):
     """
-    Bestimmt die Rolle des Benutzers basierend auf IServ-Gruppen und Rollen
+    Bestimmt die Rolle des Benutzers basierend auf IServ-Gruppen
     
-    Nur Benutzer mit diesen Rollen/Gruppen haben Zugang:
+    Nur Benutzer mit diesen Gruppen haben Zugang:
     - Administrator → admin
-    - Lehrer → teacher
-    - Mitarbeitende → teacher
+    - Lehrer, Mitarbeiter, Pädagogische Mitarbeiter, Sozialpädagogen → teacher
     
     Args:
         userinfo: Dictionary mit Benutzerdaten von IServ
@@ -54,70 +53,88 @@ def determine_user_role(userinfo):
     print(f"🔍 Bestimme Rolle für: {email}")
     print(f"   Komplette UserInfo: {userinfo}")
     
-    # Sammle alle Gruppen- und Rollennamen aus verschiedenen möglichen Feldern
-    all_names = []
-    
-    # Prüfe 'groups' Feld
-    groups = userinfo.get('groups', [])
-    print(f"   groups: {groups}")
-    all_names.extend(extract_names(groups))
-    
-    # Prüfe 'roles' Feld (IServ könnte Rollen separat senden)
-    roles = userinfo.get('roles', [])
-    print(f"   roles: {roles}")
-    all_names.extend(extract_names(roles))
-    
-    # Prüfe 'role' Feld (einzelne Rolle)
-    role = userinfo.get('role', '')
-    if role:
-        all_names.append(role)
-    
-    # Prüfe 'memberOf' Feld (LDAP-Style)
-    member_of = userinfo.get('memberOf', [])
-    all_names.extend(extract_names(member_of))
-    
-    # Lowercase für Vergleich
-    all_names_lower = [n.lower() for n in all_names if n]
-    print(f"   Alle gefundenen Namen (lowercase): {all_names_lower}")
-    
     # Admin-E-Mail hat immer Zugang (Fallback für morelli.maurizio@kgs-pattensen.de)
     if is_admin_email(email):
         print(f"   → Admin (E-Mail-Fallback)")
         return 'admin'
     
-    # Administrator-Gruppe hat Admin-Rechte (case-insensitive)
-    if 'administrator' in all_names_lower or 'administratoren' in all_names_lower:
-        print(f"   → Admin (Gruppen-Match: Administrator)")
-        return 'admin'
+    # Sammle alle Gruppen-Namen aus verschiedenen möglichen Feldern
+    all_names = []
     
-    # Lehrer und Mitarbeitende haben Teacher-Rechte (case-insensitive)
-    # Akzeptiere alle relevanten Rollen und Gruppen für Lehrkräfte/Mitarbeiter
-    allowed_teacher_roles = [
-        'lehrer', 
-        'mitarbeitende', 
-        'mitarbeiter', 
-        'pädagogische mitarbeiter',
-        'sozialpädagogen',
-        'beratung',
-        'fairplaycoaches'
-    ]
-    for role_name in allowed_teacher_roles:
-        if role_name in all_names_lower:
-            print(f"   → Teacher (Match: {role_name})")
-            return 'teacher'
+    # Prüfe 'groups' Feld (Hauptfeld für IServ)
+    groups = userinfo.get('groups', [])
+    print(f"   groups (raw): {groups}")
+    all_names.extend(extract_all_text(groups))
     
-    # Zusätzlich: Prüfe ob einer der Namen ENTHÄLT einen erlaubten Begriff (Teilstring)
-    # z.B. "Pädagogische Mitarbeiter" enthält "mitarbeiter"
-    partial_match_terms = ['lehrer', 'mitarbeiter', 'pädagog', 'sozial']
-    for name in all_names_lower:
-        for term in partial_match_terms:
+    # Prüfe auch 'roles' Feld (falls vorhanden)
+    roles = userinfo.get('roles', [])
+    if roles:
+        print(f"   roles (raw): {roles}")
+        all_names.extend(extract_all_text(roles))
+    
+    # Prüfe 'memberOf' Feld (LDAP-Style)
+    member_of = userinfo.get('memberOf', [])
+    if member_of:
+        print(f"   memberOf (raw): {member_of}")
+        all_names.extend(extract_all_text(member_of))
+    
+    # Lowercase für Vergleich, entferne leere Strings
+    all_names_lower = [n.lower().strip() for n in all_names if n and n.strip()]
+    print(f"   Alle gefundenen Namen (lowercase): {all_names_lower}")
+    
+    # Administrator-Gruppe hat Admin-Rechte
+    admin_terms = ['administrator', 'administratoren', 'admin']
+    for term in admin_terms:
+        for name in all_names_lower:
             if term in name:
-                print(f"   → Teacher (Partial Match: '{term}' in '{name}')")
+                print(f"   → Admin (Match: '{term}' in '{name}')")
+                return 'admin'
+    
+    # Erlaubte Gruppen für Teacher-Zugang
+    # Prüfe ob einer der Namen ENTHÄLT einen erlaubten Begriff (Teilstring)
+    teacher_terms = [
+        'lehrer',
+        'mitarbeiter',      # Erfasst auch "Mitarbeitende", "Pädagogische Mitarbeiter"
+        'pädagog',          # Erfasst "Pädagogische Mitarbeiter", "Sozialpädagogen"
+        'sozial',           # Erfasst "Sozialpädagogen"
+        'beratung',
+        'fairplay',
+        'coach'
+    ]
+    
+    for name in all_names_lower:
+        for term in teacher_terms:
+            if term in name:
+                print(f"   → Teacher (Match: '{term}' in '{name}')")
                 return 'teacher'
     
     # Kein Zugang für andere Benutzer (z.B. Schüler)
-    print(f"   → KEIN ZUGANG (keine berechtigte Gruppe)")
+    print(f"   → KEIN ZUGANG (keine berechtigte Gruppe gefunden)")
     return None
+
+
+def extract_all_text(data):
+    """
+    Extrahiert ALLE Textwerte aus beliebigen Datenstrukturen.
+    Rekursiv für verschachtelte Strukturen.
+    """
+    texts = []
+    
+    if isinstance(data, str):
+        texts.append(data)
+    elif isinstance(data, list):
+        for item in data:
+            texts.extend(extract_all_text(item))
+    elif isinstance(data, dict):
+        # Extrahiere alle String-Werte aus dem Dictionary
+        for key, value in data.items():
+            # Key selbst könnte relevant sein (z.B. Gruppenname als Key)
+            if isinstance(key, str):
+                texts.append(key)
+            # Wert rekursiv extrahieren
+            texts.extend(extract_all_text(value))
+    
+    return texts
 
 
 def extract_names(data):
