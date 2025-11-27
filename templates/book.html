@@ -75,6 +75,20 @@
             <p class="hint-text">Diese Notizen werden nur dem Admin angezeigt.</p>
         </div>
         
+        <div class="form-group exclusive-booking-group" id="exclusiveBookingGroup" style="display: none;">
+            <label class="checkbox-label exclusive-checkbox">
+                <input type="checkbox" name="is_exclusive" id="is_exclusive" value="1">
+                <span class="checkbox-text">
+                    <span class="checkbox-icon">🔒</span>
+                    Wirklich nur einen Schüler anmelden?
+                </span>
+            </label>
+            <p class="hint-text warning-text">
+                <strong>Hinweis:</strong> Bei exklusiver Nutzung wird die gesamte SportOase für diesen Zeitslot reserviert. 
+                Diese Buchung muss vom Admin freigegeben werden. Sie erhalten eine E-Mail nach der Freigabe.
+            </p>
+        </div>
+        
         <div class="form-group email-confirmation-group">
             <label class="checkbox-label">
                 <input type="checkbox" name="send_email_confirmation" id="send_email_confirmation" value="1">
@@ -101,7 +115,17 @@ function updateStudentFields() {
     const numStudents = parseInt(document.getElementById('num_students').value);
     const container = document.getElementById('studentFields');
     const teacherClass = document.getElementById('teacher_class').value;
+    const exclusiveGroup = document.getElementById('exclusiveBookingGroup');
+    const exclusiveCheckbox = document.getElementById('is_exclusive');
+    
     container.innerHTML = '';
+    
+    if (numStudents === 1) {
+        exclusiveGroup.style.display = 'block';
+    } else {
+        exclusiveGroup.style.display = 'none';
+        exclusiveCheckbox.checked = false;
+    }
     
     // Erstelle Optionen für Klassen-Dropdown mit Vorauswahl der Lehrer-Klasse
     function getClassOptions(selectedClass) {

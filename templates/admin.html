@@ -41,7 +41,64 @@
             <span class="stat-number">{{ bookings|length }}</span>
             <span class="stat-label">Buchungen</span>
         </div>
+        {% if pending_exclusive %}
+        <div class="stat-card pending-stat">
+            <span class="stat-number">{{ pending_exclusive|length }}</span>
+            <span class="stat-label">Exklusiv-Anfragen</span>
+        </div>
+        {% endif %}
     </div>
+    
+    {% if pending_exclusive %}
+    <!-- Ausstehende exklusive Buchungen -->
+    <section class="admin-section-modern pending-exclusive-section">
+        <div class="section-header">
+            <h3><span class="section-icon">⏳</span> Exklusive Buchungen zur Freigabe</h3>
+            <span class="info-hint">Diese Buchungen warten auf Ihre Genehmigung</span>
+        </div>
+        <div class="pending-exclusive-list">
+            {% for booking in pending_exclusive %}
+            <div class="pending-exclusive-card">
+                <div class="pending-info">
+                    <div class="pending-date">
+                        <span class="date-badge">📅 {{ booking.date }}</span>
+                        <span class="period-badge">{{ booking.period }}. Stunde</span>
+                    </div>
+                    <div class="pending-teacher">
+                        <strong>{{ booking.teacher_name }}</strong>
+                        <span>({{ booking.teacher_class }})</span>
+                    </div>
+                    <div class="pending-student">
+                        👤 {% for student in booking.students %}{{ student.name }} ({{ student.klasse }}){% endfor %}
+                    </div>
+                    <div class="pending-offer">
+                        {{ booking.offer_label }}
+                    </div>
+                    {% if booking.notes %}
+                    <div class="pending-notes">
+                        📝 {{ booking.notes }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="pending-actions">
+                    <form method="POST" action="{{ url_for('approve_exclusive', booking_id=booking.id) }}" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn-approve" title="Genehmigen">
+                            ✅ Genehmigen
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('reject_exclusive', booking_id=booking.id) }}" style="display: inline;" onsubmit="return confirm('Sind Sie sicher, dass Sie diese exklusive Buchung ablehnen möchten? Die Buchung wird gelöscht und die Lehrkraft per E-Mail benachrichtigt.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn-reject" title="Ablehnen">
+                            ❌ Ablehnen
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
     
     <!-- Benutzer-Übersicht -->
     <section class="admin-section-modern">

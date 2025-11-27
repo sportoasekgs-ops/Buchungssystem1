@@ -52,6 +52,8 @@ class Booking(db.Model):
     offer_label = db.Column(db.String(100), nullable=False)
     calendar_event_id = db.Column(db.String(200), nullable=True)
     notes = db.Column(db.Text, nullable=True)
+    is_exclusive = db.Column(db.Boolean, default=False, nullable=False)
+    is_approved = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     
     notifications = db.relationship('Notification', back_populates='booking', cascade='all, delete-orphan', passive_deletes=True)
@@ -71,6 +73,8 @@ class Booking(db.Model):
             'offer_label': self.offer_label,
             'calendar_event_id': self.calendar_event_id,
             'notes': self.notes,
+            'is_exclusive': self.is_exclusive,
+            'is_approved': self.is_approved,
             'created_at': self.created_at.isoformat() if isinstance(self.created_at, datetime) else self.created_at,
             'teacher_email': self.teacher.email if self.teacher else None
         }
@@ -255,7 +259,7 @@ def get_all_users():
     users = User.query.order_by(User.role, User.username).all()
     return [u.to_dict() for u in users]
 
-def create_booking(date, weekday, period, teacher_id, students, offer_type, offer_label, teacher_name=None, teacher_class=None, calendar_event_id=None, notes=None):
+def create_booking(date, weekday, period, teacher_id, students, offer_type, offer_label, teacher_name=None, teacher_class=None, calendar_event_id=None, notes=None, is_exclusive=False):
     """Erstellt eine neue Buchung in der Datenbank"""
     try:
         students_json = json.dumps(students, ensure_ascii=False)
@@ -271,6 +275,8 @@ def create_booking(date, weekday, period, teacher_id, students, offer_type, offe
             offer_label=offer_label,
             calendar_event_id=calendar_event_id,
             notes=notes,
+            is_exclusive=is_exclusive,
+            is_approved=not is_exclusive,
             created_at=datetime.now()
         )
         db.session.add(booking)
@@ -349,6 +355,43 @@ def get_booking_by_id(booking_id):
     """Gibt eine einzelne Buchung anhand der ID zurück"""
     booking = Booking.query.get(booking_id)
     return booking.to_dict() if booking else None
+
+def get_exclusive_booking_for_date_period(date, period):
+    """Prüft ob eine genehmigte exklusive Buchung für diesen Slot existiert"""
+    booking = Booking.query.filter_by(
+        date=date, 
+        period=period, 
+        is_exclusive=True, 
+        is_approved=True
+    ).first()
+    return booking.to_dict() if booking else None
+
+def get_pending_exclusive_bookings():
+    """Gibt alle exklusiven Buchungen zurück, die noch auf Freigabe warten"""
+    bookings = Booking.query.filter_by(
+        is_exclusive=True, 
+        is_approved=False
+    ).order_by(Booking.date, Booking.period).all()
+    return [b.to_dict() for b in bookings]
+
+def approve_exclusive_booking(booking_id):
+    """Genehmigt eine exklusive Buchung"""
+    try:
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            return False
+        
+        booking.is_approved = True
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(f"Fehler beim Genehmigen der Buchung: {e}")
+        return False
+
+def reject_exclusive_booking(booking_id):
+    """Lehnt eine exklusive Buchung ab (löscht sie)"""
+    return delete_booking(booking_id)
 
 def update_booking(booking_id, date, weekday, period, teacher_id, students, offer_type, offer_label, teacher_name=None, teacher_class=None, notes=None):
     """Aktualisiert eine bestehende Buchung in der Datenbank"""

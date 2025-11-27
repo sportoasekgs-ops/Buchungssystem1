@@ -554,6 +554,8 @@ def dashboard():
     
     # Organisiere Buchungen nach Datum und Stunde
     bookings_by_date_period = {}
+    exclusive_by_date_period = {}
+    
     for booking in week_bookings:
         booking_dict = dict(booking)
         key = f"{booking_dict['date']}_{booking_dict['period']}"
@@ -561,14 +563,21 @@ def dashboard():
             bookings_by_date_period[key] = []
         
         students = json.loads(booking_dict['students_json']) if booking_dict.get('students_json') else []
-        bookings_by_date_period[key].append({
+        booking_info = {
             'teacher_name': booking_dict.get('teacher_name', 'N/A'),
             'teacher_class': booking_dict.get('teacher_class', 'N/A'),
             'teacher_id': booking_dict.get('teacher_id'),
             'student_count': len(students),
             'students': students,
-            'offer_label': booking_dict.get('offer_label', 'N/A')
-        })
+            'offer_label': booking_dict.get('offer_label', 'N/A'),
+            'is_exclusive': booking_dict.get('is_exclusive', False),
+            'is_approved': booking_dict.get('is_approved', True)
+        }
+        bookings_by_date_period[key].append(booking_info)
+        
+        # Speichere exklusive genehmigte Buchungen separat
+        if booking_dict.get('is_exclusive') and booking_dict.get('is_approved'):
+            exclusive_by_date_period[key] = booking_info
     
     week_overview = []
     weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
@@ -584,9 +593,15 @@ def dashboard():
             key = f"{day_date_str}_{period}"
             period_bookings = bookings_by_date_period.get(key, [])
             blocked_slot = blocked_by_date_period.get(key)
+            exclusive_booking = exclusive_by_date_period.get(key)
             
             total_students = sum(b['student_count'] for b in period_bookings)
-            available = MAX_STUDENTS_PER_PERIOD - total_students
+            
+            # Bei exklusiver Buchung ist der Slot voll belegt
+            if exclusive_booking:
+                available = 0
+            else:
+                available = MAX_STUDENTS_PER_PERIOD - total_students
             
             # Prüfe, ob Termin in der Vergangenheit liegt
             is_past = is_past_date(day_date, period)
@@ -596,7 +611,7 @@ def dashboard():
             
             # Prüfe, ob Buchung für diesen Slot möglich ist
             can_book, _ = check_booking_time(day_date, period)
-            can_book = can_book and available > 0 and not blocked_slot and not is_past and not is_weekend
+            can_book = can_book and available > 0 and not blocked_slot and not is_past and not is_weekend and not exclusive_booking
             
             day_schedule.append({
                 'period': period,
@@ -610,7 +625,9 @@ def dashboard():
                 'blocked_reason': blocked_slot.get('reason', 'Beratung') if blocked_slot else None,
                 'blocked_icon': blocked_slot.get('icon', '🔧') if blocked_slot else None,
                 'is_past': is_past,
-                'is_weekend': is_weekend
+                'is_weekend': is_weekend,
+                'is_exclusive': exclusive_booking is not None,
+                'exclusive_booking': exclusive_booking
             })
         # Prüfe ob heute
         today = datetime.now(get_berlin_tz()).date()
@@ -791,6 +808,9 @@ def book(date_str, period):
         # Hole optionale Notizen
         notes = request.form.get('notes', '').strip()
         
+        # Prüfe ob exklusive Buchung (nur 1 Schüler)
+        is_exclusive = request.form.get('is_exclusive') == '1' and len(students) == 1
+        
         # Erstelle Buchung in Datenbank
         booking_id = create_booking(
             date=date_str,
@@ -802,7 +822,8 @@ def book(date_str, period):
             offer_label=offer_label,
             teacher_name=teacher_name,
             teacher_class=teacher_class,
-            notes=notes if notes else None
+            notes=notes if notes else None,
+            is_exclusive=is_exclusive
         )
         
         if booking_id:
@@ -816,14 +837,22 @@ def book(date_str, period):
                 'offer_label': offer_label,
                 'teacher_name': teacher_name,
                 'teacher_class': teacher_class,
-                'students_json': json.dumps(students, ensure_ascii=False)
+                'students_json': json.dumps(students, ensure_ascii=False),
+                'is_exclusive': is_exclusive
             }
+            
             # Erstelle Notification in der Datenbank
-            notification_message = f"Neue Buchung: {teacher_name} hat {len(students)} Schüler für {offer_label} am {date_str} (Stunde {period}) angemeldet."
+            if is_exclusive:
+                notification_message = f"🔒 EXKLUSIVE Buchung (Freigabe nötig): {teacher_name} möchte 1 Schüler exklusiv für {offer_label} am {date_str} (Stunde {period}) anmelden."
+                notification_type = 'exclusive_booking_pending'
+            else:
+                notification_message = f"Neue Buchung: {teacher_name} hat {len(students)} Schüler für {offer_label} am {date_str} (Stunde {period}) angemeldet."
+                notification_type = 'new_booking'
+            
             notification_id = create_notification(
                 booking_id=booking_id,
                 message=notification_message,
-                notification_type='new_booking',
+                notification_type=notification_type,
                 recipient_role='admin',
                 metadata={
                     'teacher_name': teacher_name,
@@ -831,7 +860,8 @@ def book(date_str, period):
                     'date': date_str,
                     'period': period,
                     'offer_label': offer_label,
-                    'students_count': len(students)
+                    'students_count': len(students),
+                    'is_exclusive': is_exclusive
                 }
             )
             
@@ -884,7 +914,10 @@ def book(date_str, period):
                     'unread_count': unread_count
                 })
             
-            flash(f'Buchung erfolgreich! {len(students)} Schüler für {offer_label} angemeldet.', 'success')
+            if is_exclusive:
+                flash(f'Exklusive Buchung eingereicht! Die Buchung wartet auf Freigabe durch den Admin. Sie werden per E-Mail benachrichtigt.', 'info')
+            else:
+                flash(f'Buchung erfolgreich! {len(students)} Schüler für {offer_label} angemeldet.', 'success')
             return redirect(url_for('dashboard', date=date_str))
         else:
             flash('Fehler beim Erstellen der Buchung.', 'error')
@@ -1226,6 +1259,28 @@ def admin():
     # Hole alle Benutzer
     users = get_all_users()
     
+    # Hole ausstehende exklusive Buchungen
+    from models import get_pending_exclusive_bookings
+    pending_exclusive = get_pending_exclusive_bookings()
+    pending_exclusive_display = []
+    for booking in pending_exclusive:
+        booking_dict = dict(booking)
+        students = json.loads(booking_dict['students_json']) if booking_dict.get('students_json') else []
+        pending_exclusive_display.append({
+            'id': booking_dict['id'],
+            'date': booking_dict['date'],
+            'weekday': booking_dict['weekday'],
+            'period': booking_dict['period'],
+            'teacher_email': booking_dict.get('teacher_email'),
+            'teacher_name': booking_dict.get('teacher_name', 'N/A'),
+            'teacher_class': booking_dict.get('teacher_class', 'N/A'),
+            'offer_label': booking_dict['offer_label'],
+            'offer_type': booking_dict['offer_type'],
+            'students': students,
+            'student_count': len(students),
+            'notes': booking_dict.get('notes')
+        })
+    
     # Hole alle Buchungen
     filter_date = request.args.get('filter_date', '')
     if filter_date:
@@ -1250,13 +1305,96 @@ def admin():
             'offer_type': booking_dict['offer_type'],
             'students': students,
             'student_count': len(students),
-            'notes': booking_dict.get('notes')
+            'notes': booking_dict.get('notes'),
+            'is_exclusive': booking_dict.get('is_exclusive', False),
+            'is_approved': booking_dict.get('is_approved', True)
         })
     
     return render_template('admin.html',
                          users=users,
                          bookings=bookings_display,
+                         pending_exclusive=pending_exclusive_display,
                          filter_date=filter_date)
+
+# Route: Exklusive Buchung genehmigen
+@app.route('/admin/approve_exclusive/<int:booking_id>', methods=['POST'])
+@admin_required
+def approve_exclusive(booking_id):
+    """Genehmigt eine exklusive Buchung"""
+    from models import approve_exclusive_booking, get_booking_by_id
+    
+    success = approve_exclusive_booking(booking_id)
+    if success:
+        # Hole Buchungsdetails für E-Mail
+        booking = get_booking_by_id(booking_id)
+        if booking:
+            booking_dict = dict(booking)
+            teacher_email = booking_dict.get('teacher_email')
+            teacher_name = booking_dict.get('teacher_name', 'Lehrkraft')
+            students = json.loads(booking_dict['students_json']) if booking_dict.get('students_json') else []
+            student_name = students[0]['name'] if students else 'Schüler/in'
+            date_str = booking_dict['date']
+            period = booking_dict['period']
+            
+            # Sende Bestätigungs-E-Mail
+            if teacher_email:
+                from email_service import send_exclusive_approved_email
+                send_exclusive_approved_email(
+                    teacher_email=teacher_email,
+                    teacher_name=teacher_name,
+                    student_name=student_name,
+                    date_str=date_str,
+                    period=period
+                )
+        
+        flash('Exklusive Buchung wurde genehmigt. Der Slot ist jetzt vollständig reserviert.', 'success')
+    else:
+        flash('Fehler beim Genehmigen der Buchung.', 'error')
+    
+    return redirect(url_for('admin'))
+
+# Route: Exklusive Buchung ablehnen
+@app.route('/admin/reject_exclusive/<int:booking_id>', methods=['POST'])
+@admin_required
+def reject_exclusive(booking_id):
+    """Lehnt eine exklusive Buchung ab (löscht sie)"""
+    from models import reject_exclusive_booking, get_booking_by_id
+    
+    # Hole Buchungsdetails für E-Mail vor dem Löschen
+    booking = get_booking_by_id(booking_id)
+    teacher_email = None
+    teacher_name = None
+    student_name = None
+    date_str = None
+    period = None
+    
+    if booking:
+        booking_dict = dict(booking)
+        teacher_email = booking_dict.get('teacher_email')
+        teacher_name = booking_dict.get('teacher_name', 'Lehrkraft')
+        students = json.loads(booking_dict['students_json']) if booking_dict.get('students_json') else []
+        student_name = students[0]['name'] if students else 'Schüler/in'
+        date_str = booking_dict['date']
+        period = booking_dict['period']
+    
+    success = reject_exclusive_booking(booking_id)
+    if success:
+        # Sende Ablehnungs-E-Mail
+        if teacher_email:
+            from email_service import send_exclusive_rejected_email
+            send_exclusive_rejected_email(
+                teacher_email=teacher_email,
+                teacher_name=teacher_name,
+                student_name=student_name,
+                date_str=date_str,
+                period=period
+            )
+        
+        flash('Exklusive Buchung wurde abgelehnt und gelöscht. Die Lehrkraft wurde benachrichtigt.', 'success')
+    else:
+        flash('Fehler beim Ablehnen der Buchung.', 'error')
+    
+    return redirect(url_for('admin'))
 
 # Route: Buchung erstellen (nur Admin)
 @app.route('/admin/create_booking', methods=['GET', 'POST'])

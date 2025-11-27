@@ -527,7 +527,9 @@
                                         {{ course_tag }}
                                     </span>
                                     <span class="slot-availability">
-                                        {% if slot.can_book %}
+                                        {% if slot.is_exclusive %}
+                                        <span class="exclusive-text">🔒 Exklusiv</span>
+                                        {% elif slot.can_book %}
                                         <span class="availability-text"
                                             >{{ slot.total_students }}/5
                                             gebucht</span

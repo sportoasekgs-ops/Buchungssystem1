@@ -264,3 +264,117 @@ def send_user_booking_confirmation(email, data):
     """Sendet Buchungsbestätigung an den buchenden Benutzer"""
     subject, html, text = create_user_confirmation_email(data)
     return send_email_resend(email, subject, html, text)
+
+
+def send_exclusive_approved_email(teacher_email, teacher_name, student_name, date_str, period):
+    """Sendet Bestätigungs-E-Mail wenn eine exklusive Buchung genehmigt wurde"""
+    from config import PERIOD_TIMES
+    
+    period_time = PERIOD_TIMES.get(period, "")
+    
+    subject = f"✅ Exklusive Buchung genehmigt – SportOase"
+    
+    html = f"""
+    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #E91E63; margin: 0;">🎉 Exklusive Buchung genehmigt!</h2>
+        </div>
+        <div style="background: #d4edda; border-radius: 8px; padding: 20px; border-left: 4px solid #28a745;">
+            <p>Hallo <strong>{teacher_name}</strong>,</p>
+            <p>Ihre exklusive Buchung wurde von einem Administrator genehmigt.</p>
+            <p>Der gesamte Slot ist jetzt für Ihren Schüler reserviert:</p>
+            <ul style="list-style: none; padding: 0;">
+                <li>📅 <strong>Datum:</strong> {date_str}</li>
+                <li>⏰ <strong>Stunde:</strong> {period}. Stunde ({period_time})</li>
+                <li>👤 <strong>Schüler:</strong> {student_name}</li>
+            </ul>
+            <p style="color: #155724; font-weight: bold;">
+                Der Slot ist jetzt vollständig für Ihren Schüler reserviert.
+            </p>
+        </div>
+        <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
+            Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de<br>
+            SportOase – Ernst-Reuter-Schule Pattensen
+        </p>
+    </body></html>
+    """
+    
+    text = f"""
+Exklusive Buchung genehmigt – SportOase
+
+Hallo {teacher_name},
+
+Ihre exklusive Buchung wurde von einem Administrator genehmigt.
+
+Datum: {date_str}
+Stunde: {period}. Stunde ({period_time})
+Schüler: {student_name}
+
+Der Slot ist jetzt vollständig für Ihren Schüler reserviert.
+
+---
+Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
+SportOase – Ernst-Reuter-Schule Pattensen
+    """
+    
+    return send_email_resend(teacher_email, subject, html, text)
+
+
+def send_exclusive_rejected_email(teacher_email, teacher_name, student_name, date_str, period):
+    """Sendet Ablehnungs-E-Mail wenn eine exklusive Buchung abgelehnt wurde"""
+    from config import PERIOD_TIMES
+    
+    period_time = PERIOD_TIMES.get(period, "")
+    
+    subject = f"❌ Exklusive Buchung abgelehnt – SportOase"
+    
+    html = f"""
+    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #E91E63; margin: 0;">Exklusive Buchung abgelehnt</h2>
+        </div>
+        <div style="background: #f8d7da; border-radius: 8px; padding: 20px; border-left: 4px solid #dc3545;">
+            <p>Hallo <strong>{teacher_name}</strong>,</p>
+            <p>Leider wurde Ihre exklusive Buchung von einem Administrator abgelehnt:</p>
+            <ul style="list-style: none; padding: 0;">
+                <li>📅 <strong>Datum:</strong> {date_str}</li>
+                <li>⏰ <strong>Stunde:</strong> {period}. Stunde ({period_time})</li>
+                <li>👤 <strong>Schüler:</strong> {student_name}</li>
+            </ul>
+            <p style="color: #721c24;">
+                Die Buchung wurde storniert. Sie können den Schüler gerne regulär (ohne exklusive Reservierung) anmelden, falls Plätze verfügbar sind.
+            </p>
+            <p>
+                Bei Fragen oder Rückfragen wenden Sie sich bitte direkt an die SportOase-Leitung.
+            </p>
+        </div>
+        <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
+            Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de<br>
+            SportOase – Ernst-Reuter-Schule Pattensen
+        </p>
+    </body></html>
+    """
+    
+    text = f"""
+Exklusive Buchung abgelehnt – SportOase
+
+Hallo {teacher_name},
+
+Leider wurde Ihre exklusive Buchung von einem Administrator abgelehnt:
+
+Datum: {date_str}
+Stunde: {period}. Stunde ({period_time})
+Schüler: {student_name}
+
+Die Buchung wurde storniert. Sie können den Schüler gerne regulär (ohne exklusive Reservierung) anmelden, falls Plätze verfügbar sind.
+
+Bei Fragen oder Rückfragen wenden Sie sich bitte direkt an die SportOase-Leitung.
+
+---
+Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
+SportOase – Ernst-Reuter-Schule Pattensen
+    """
+    
+    return send_email_resend(teacher_email, subject, html, text)
