@@ -7,30 +7,32 @@ import resend
 
 from config import ADMIN_EMAIL
 
+
 def get_resend_credentials():
     """Holt Resend API-Key - zuerst aus ENV, dann über Replit Connector"""
-    
+
     # 1. Prüfe direkte Environment Variable (für Render)
     env_api_key = os.environ.get('RESEND_API_KEY')
-    env_from_email = os.environ.get('RESEND_FROM_EMAIL', 'SportOase <onboarding@resend.dev>')
-    
+    env_from_email = os.environ.get('RESEND_FROM_EMAIL',
+                                    'SportOase <mauro@sportoase.app>')
+
     if env_api_key:
         print(f"[EMAIL] Resend API-Key aus Environment Variable gefunden")
         return env_api_key, env_from_email
-    
+
     # 2. Versuche Replit Connector (für Replit)
     hostname = os.environ.get('REPLIT_CONNECTORS_HOSTNAME')
-    
+
     x_replit_token = None
     if os.environ.get('REPL_IDENTITY'):
         x_replit_token = 'repl ' + os.environ.get('REPL_IDENTITY')
     elif os.environ.get('WEB_REPL_RENEWAL'):
         x_replit_token = 'depl ' + os.environ.get('WEB_REPL_RENEWAL')
-    
+
     if not x_replit_token or not hostname:
         print("[EMAIL] Weder ENV noch Replit Connector verfügbar")
         return None, None
-    
+
     try:
         import requests
         response = requests.get(
@@ -39,22 +41,21 @@ def get_resend_credentials():
                 'Accept': 'application/json',
                 'X_REPLIT_TOKEN': x_replit_token
             },
-            timeout=10
-        )
+            timeout=10)
         data = response.json()
         connection = data.get('items', [{}])[0] if data.get('items') else {}
         settings = connection.get('settings', {})
-        
+
         api_key = settings.get('api_key')
         from_email = settings.get('from_email')
-        
+
         if api_key:
             print(f"[EMAIL] Resend API-Key über Replit Connector gefunden")
             return api_key, from_email
         else:
             print("[EMAIL] Resend nicht konfiguriert")
             return None, None
-            
+
     except Exception as e:
         print(f"[EMAIL] Fehler beim Abrufen der Resend-Credentials: {e}")
         return None, None
@@ -63,37 +64,41 @@ def get_resend_credentials():
 def send_email_resend(to_email, subject, body_html, body_text=None):
     """Sendet E-Mail über Resend API"""
     logger = logging.getLogger(__name__)
-    
+
     logger.info(f"Versuche E-Mail zu senden an: {to_email}")
-    
+
     try:
         api_key, from_email = get_resend_credentials()
-        
+
         if not api_key:
-            print(f"[EMAIL] WARNUNG: Resend nicht konfiguriert - E-Mail an {to_email} nicht gesendet")
+            print(
+                f"[EMAIL] WARNUNG: Resend nicht konfiguriert - E-Mail an {to_email} nicht gesendet"
+            )
             return False
-        
+
         resend.api_key = api_key
-        
+
         # Verwende immer die Resend Test-Adresse (keine Domain-Verifizierung nötig)
-        from_address = "SportOase <onboarding@resend.dev>"
-        
+        from_address = "SportOase <mauro@sportoase.app>"
+
         params = {
             "from": from_address,
             "to": [to_email],
             "subject": subject,
             "html": body_html,
         }
-        
+
         if body_text:
             params["text"] = body_text
-        
+
         print(f"[EMAIL] Sende von {from_address} an {to_email}...")
         result = resend.Emails.send(params)
-        
-        print(f"[EMAIL] Erfolgreich gesendet an {to_email} (ID: {result.get('id', 'unknown')})")
+
+        print(
+            f"[EMAIL] Erfolgreich gesendet an {to_email} (ID: {result.get('id', 'unknown')})"
+        )
         return True
-        
+
     except Exception as e:
         print(f"[EMAIL] FEHLER beim E-Mail-Versand an {to_email}: {e}")
         return False
@@ -110,16 +115,17 @@ def create_booking_notification_email(data):
     offer_type = data.get("offer_type", "")
 
     students_json = data.get("students_json", "[]")
-    students = json.loads(students_json) if isinstance(students_json, str) else students_json
+    students = json.loads(students_json) if isinstance(students_json,
+                                                       str) else students_json
     count = len(students)
 
     students_html = "<br>".join(
-        [f"• {s['name']} (Klasse {s['klasse']})" for s in students]
-    ) if students else "Keine Schüler"
-    
+        [f"• {s['name']} (Klasse {s['klasse']})"
+         for s in students]) if students else "Keine Schüler"
+
     students_list = ", ".join(
-        [f"{s['name']} ({s['klasse']})" for s in students]
-    ) if students else "Keine Schüler"
+        [f"{s['name']} ({s['klasse']})"
+         for s in students]) if students else "Keine Schüler"
 
     subject = f"SportOase Buchung: {offer} am {date}"
 
@@ -193,12 +199,13 @@ def create_user_confirmation_email(data):
     offer_type = data.get("offer_type", "")
 
     students_json = data.get("students_json", "[]")
-    students = json.loads(students_json) if isinstance(students_json, str) else students_json
+    students = json.loads(students_json) if isinstance(students_json,
+                                                       str) else students_json
     count = len(students)
 
     students_html = "<br>".join(
-        [f"• {s['name']} (Klasse {s['klasse']})" for s in students]
-    ) if students else "Keine Schüler"
+        [f"• {s['name']} (Klasse {s['klasse']})"
+         for s in students]) if students else "Keine Schüler"
 
     subject = f"Buchungsbestätigung: {offer} am {date}"
 
@@ -266,14 +273,15 @@ def send_user_booking_confirmation(email, data):
     return send_email_resend(email, subject, html, text)
 
 
-def send_exclusive_approved_email(teacher_email, teacher_name, student_name, date_str, period):
+def send_exclusive_approved_email(teacher_email, teacher_name, student_name,
+                                  date_str, period):
     """Sendet Bestätigungs-E-Mail wenn eine exklusive Buchung genehmigt wurde"""
     from config import PERIOD_TIMES
-    
+
     period_time = PERIOD_TIMES.get(period, "")
-    
+
     subject = f"✅ Exklusive Buchung genehmigt – SportOase"
-    
+
     html = f"""
     <!DOCTYPE html><html><head><meta charset="utf-8"></head>
     <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -299,7 +307,7 @@ def send_exclusive_approved_email(teacher_email, teacher_name, student_name, dat
         </p>
     </body></html>
     """
-    
+
     text = f"""
 Exklusive Buchung genehmigt – SportOase
 
@@ -317,18 +325,19 @@ Der Slot ist jetzt vollständig für Ihren Schüler reserviert.
 Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
 SportOase – Ernst-Reuter-Schule Pattensen
     """
-    
+
     return send_email_resend(teacher_email, subject, html, text)
 
 
-def send_exclusive_rejected_email(teacher_email, teacher_name, student_name, date_str, period):
+def send_exclusive_rejected_email(teacher_email, teacher_name, student_name,
+                                  date_str, period):
     """Sendet Ablehnungs-E-Mail wenn eine exklusive Buchung abgelehnt wurde"""
     from config import PERIOD_TIMES
-    
+
     period_time = PERIOD_TIMES.get(period, "")
-    
+
     subject = f"❌ Exklusive Buchung abgelehnt – SportOase"
-    
+
     html = f"""
     <!DOCTYPE html><html><head><meta charset="utf-8"></head>
     <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -356,7 +365,7 @@ def send_exclusive_rejected_email(teacher_email, teacher_name, student_name, dat
         </p>
     </body></html>
     """
-    
+
     text = f"""
 Exklusive Buchung abgelehnt – SportOase
 
@@ -376,5 +385,5 @@ Bei Fragen oder Rückfragen wenden Sie sich bitte direkt an die SportOase-Leitun
 Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
 SportOase – Ernst-Reuter-Schule Pattensen
     """
-    
+
     return send_email_resend(teacher_email, subject, html, text)
