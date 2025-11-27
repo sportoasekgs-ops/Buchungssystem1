@@ -388,8 +388,6 @@ def oauth_callback():
         session['user_username'] = user['username']
         session['user_email'] = user['email']
         session['user_role'] = user['role']
-        session['user_name'] = name  # Vollständiger Name von IServ
-        session['iserv_group'] = iserv_group  # IServ-Gruppenbezeichnung
         
         flash(f'Willkommen, {name}!', 'success')
         return redirect(url_for('dashboard'))
