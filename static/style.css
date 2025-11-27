@@ -1212,10 +1212,13 @@ details.help-section[open] .toggle-arrow {
 /* Week Overview - Modern Card */
 .week-overview {
     background: var(--bg-primary);
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-sm);
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
     border: 1px solid var(--border);
 }
 
@@ -1285,7 +1288,7 @@ details.help-section[open] .toggle-arrow {
 
 .week-table th,
 .week-table td {
-    padding: 0.5rem 0.25rem;
+    padding: 0.4rem 0.2rem;
     text-align: center;
     vertical-align: top;
     border: 1px solid var(--border-light);
@@ -1386,11 +1389,12 @@ details.help-section[open] .toggle-arrow {
 /* Period Styles */
 .period-header {
     font-weight: 600;
-    margin-bottom: 0.625rem;
-    padding: 0.5rem;
+    margin-bottom: 0.4rem;
+    padding: 0.35rem 0.25rem;
     border-radius: var(--radius-sm);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-align: center;
+    line-height: 1.2;
 }
 
 .period-fest .period-header {
@@ -1454,10 +1458,10 @@ details.help-section[open] .toggle-arrow {
 
 /* ===== Neue Slot-Karten mit Kursfarben ===== */
 .slot-card {
-    padding: 0.5rem;
+    padding: 0.4rem;
     border-radius: var(--radius);
     position: relative;
-    min-height: 80px;
+    min-height: 65px;
     display: flex;
     flex-direction: column;
     background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(240,240,240,0.9) 100%);
@@ -2204,6 +2208,8 @@ details.help-section[open] .toggle-arrow {
         padding: 0.75rem;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        margin: 0;
     }
     
     .week-header-with-nav {
@@ -2287,9 +2293,15 @@ details.help-section[open] .toggle-arrow {
     }
     
     .period-header {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
+        padding: 0.25rem;
+        margin-bottom: 0.25rem;
+        line-height: 1.1;
+    }
+    
+    .slot-card {
+        min-height: 55px;
         padding: 0.3rem;
-        margin-bottom: 0.3rem;
     }
     
     .booking-info {
