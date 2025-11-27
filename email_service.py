@@ -37,7 +37,6 @@ def get_german_weekday(weekday_abbr):
 def get_resend_credentials():
     """Holt Resend API-Key - zuerst aus ENV, dann über Replit Connector"""
 
-    # 1. Prüfe direkte Environment Variable (für Render)
     env_api_key = os.environ.get('RESEND_API_KEY')
     env_from_email = os.environ.get('RESEND_FROM_EMAIL',
                                     'SportOase <mauro@sportoase.app>')
@@ -46,7 +45,6 @@ def get_resend_credentials():
         print(f"[EMAIL] Resend API-Key aus Environment Variable gefunden")
         return env_api_key, env_from_email
 
-    # 2. Versuche Replit Connector (für Replit)
     hostname = os.environ.get('REPLIT_CONNECTORS_HOSTNAME')
 
     x_replit_token = None
@@ -104,7 +102,6 @@ def send_email_resend(to_email, subject, body_html, body_text=None):
 
         resend.api_key = api_key
 
-        # Verwende immer die Resend Test-Adresse (keine Domain-Verifizierung nötig)
         from_address = "SportOase <mauro@sportoase.app>"
 
         params = {
@@ -130,8 +127,28 @@ def send_email_resend(to_email, subject, body_html, body_text=None):
         return False
 
 
+def get_email_styles():
+    """Zentrale Styles für alle E-Mails"""
+    return {
+        'container': 'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;',
+        'header': 'background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); padding: 24px 30px; border-radius: 12px 12px 0 0;',
+        'header_text': 'color: white; margin: 0; font-size: 20px; font-weight: 600;',
+        'body': 'padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;',
+        'card': 'background: #f8fafc; border-radius: 10px; padding: 20px; margin: 20px 0;',
+        'info_row': 'display: flex; padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #E91E63;',
+        'label': 'color: #E91E63; font-weight: 600; min-width: 100px;',
+        'value': 'color: #1f2937;',
+        'success_box': 'background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 16px 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;',
+        'warning_box': 'background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px;',
+        'error_box': 'background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px;',
+        'footer': 'margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;',
+    }
+
+
 def create_booking_notification_email(data):
-    """Erstellt eine formatierte E-Mail für Buchungsbenachrichtigungen"""
+    """Erstellt eine formatierte E-Mail für Buchungsbenachrichtigungen (Admin)"""
+    from config import PERIOD_TIMES
+    
     teacher = data.get("teacher_name", "Unbekannt")
     teacher_class = data.get("teacher_class", "")
     date_raw = data.get("date", "")
@@ -139,54 +156,52 @@ def create_booking_notification_email(data):
     weekday_raw = data.get("weekday", "")
     weekday = get_german_weekday(weekday_raw)
     period = data.get("period", "")
+    period_time = PERIOD_TIMES.get(period, "")
     offer = data.get("offer_label", "")
     offer_type = data.get("offer_type", "")
 
     students_json = data.get("students_json", "[]")
-    students = json.loads(students_json) if isinstance(students_json,
-                                                       str) else students_json
+    students = json.loads(students_json) if isinstance(students_json, str) else students_json
     count = len(students)
 
-    students_html = "<br>".join(
-        [f"• {s['name']} (Klasse {s['klasse']})"
-         for s in students]) if students else "Keine Schüler"
+    students_html = "".join([
+        f'<div style="padding: 8px 12px; background: white; border-radius: 6px; margin: 6px 0;">• {s["name"]} (Klasse {s["klasse"]})</div>'
+        for s in students
+    ]) if students else '<div style="color: #6b7280;">Keine Schüler*innen</div>'
 
-    students_list = ", ".join(
-        [f"{s['name']} ({s['klasse']})"
-         for s in students]) if students else "Keine Schüler"
-
-    subject = f"SportOase Buchung: {offer} am {date}"
+    subject = f"📚 Neue Buchung: {offer} am {date}"
 
     html = f"""
-    <html><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 15px 20px; border-radius: 8px; margin: 0 0 20px 0;">
-                Neue Buchung – SportOase
-            </h2>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #3b82f6;">
-                    <strong style="color: #3b82f6;">Lehrkraft:</strong> {teacher} {f"({teacher_class})" if teacher_class else ""}
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #3b82f6;">
-                    <strong style="color: #3b82f6;">Datum:</strong> {date} ({weekday})
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #3b82f6;">
-                    <strong style="color: #3b82f6;">Stunde:</strong> {period}. Stunde
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #3b82f6;">
-                    <strong style="color: #3b82f6;">Angebot:</strong> {offer} – <span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">{offer_type.upper()}</span>
-                </p>
-                <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 4px;">
-                    <strong style="color: #3b82f6;">Schüler ({count}):</strong>
-                    <div style="margin-top: 10px; margin-left: 10px;">
-                        {students_html}
+    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="margin: 0; padding: 20px; background: #f3f4f6;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); padding: 24px 30px;">
+                <h2 style="color: white; margin: 0; font-size: 20px;">📚 Neue Buchung eingegangen</h2>
+            </div>
+            <div style="padding: 30px;">
+                <div style="background: #f8fafc; border-radius: 10px; padding: 20px;">
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #3b82f6;">
+                        <strong style="color: #3b82f6;">👤 Lehrkraft:</strong> {teacher} {f"({teacher_class})" if teacher_class else ""}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #3b82f6;">
+                        <strong style="color: #3b82f6;">📅 Datum:</strong> {weekday}, {date}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #3b82f6;">
+                        <strong style="color: #3b82f6;">⏰ Zeit:</strong> {period}. Stunde ({period_time} Uhr)
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #3b82f6;">
+                        <strong style="color: #3b82f6;">📋 Angebot:</strong> {offer} <span style="background: #3b82f6; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; margin-left: 8px;">{offer_type.upper()}</span>
+                    </div>
+                    <div style="padding: 16px; background: white; border-radius: 8px; margin: 12px 0;">
+                        <strong style="color: #3b82f6;">👥 Schüler*innen ({count}):</strong>
+                        <div style="margin-top: 10px;">{students_html}</div>
                     </div>
                 </div>
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+                    Automatisch generiert am {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}<br>
+                    SportOase – Ernst-Reuter-Schule Pattensen
+                </div>
             </div>
-            <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
-                Diese Nachricht wurde automatisch vom SportOase Buchungssystem generiert.<br>
-                Zeit: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}
-            </p>
         </div>
     </body></html>
     """
@@ -195,16 +210,15 @@ def create_booking_notification_email(data):
 Neue Buchung – SportOase
 
 Lehrkraft: {teacher} {f"({teacher_class})" if teacher_class else ""}
-Datum: {date} ({weekday})
-Stunde: {period}. Stunde
+Datum: {weekday}, {date}
+Zeit: {period}. Stunde ({period_time} Uhr)
 Angebot: {offer} ({offer_type})
 
-Schüler ({count}):
-{students_list}
+Schüler*innen ({count}):
+{', '.join([f"{s['name']} ({s['klasse']})" for s in students])}
 
 ---
-Zeit: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}
-Diese Nachricht wurde automatisch vom SportOase Buchungssystem generiert.
+Automatisch generiert am {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}
     """
 
     return subject, html, text
@@ -218,6 +232,8 @@ def send_booking_notification(data):
 
 def create_user_confirmation_email(data):
     """Erstellt eine Bestätigungs-E-Mail für den buchenden Benutzer"""
+    from config import PERIOD_TIMES
+    
     teacher = data.get("teacher_name", "Unbekannt")
     teacher_class = data.get("teacher_class", "")
     date_raw = data.get("date", "")
@@ -225,72 +241,74 @@ def create_user_confirmation_email(data):
     weekday_raw = data.get("weekday", "")
     weekday = get_german_weekday(weekday_raw)
     period = data.get("period", "")
+    period_time = PERIOD_TIMES.get(period, "")
     offer = data.get("offer_label", "")
     offer_type = data.get("offer_type", "")
 
     students_json = data.get("students_json", "[]")
-    students = json.loads(students_json) if isinstance(students_json,
-                                                       str) else students_json
+    students = json.loads(students_json) if isinstance(students_json, str) else students_json
     count = len(students)
 
-    students_html = "<br>".join(
-        [f"• {s['name']} (Klasse {s['klasse']})"
-         for s in students]) if students else "Keine Schüler"
+    students_html = "".join([
+        f'<div style="padding: 8px 12px; background: white; border-radius: 6px; margin: 6px 0;">• {s["name"]} (Klasse {s["klasse"]})</div>'
+        for s in students
+    ]) if students else '<div style="color: #6b7280;">Keine Schüler*innen</div>'
 
-    subject = f"Buchungsbestätigung: {offer} am {date}"
+    subject = f"✅ Buchung bestätigt: {offer} am {date}"
 
     html = f"""
-    <html><body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); color: white; padding: 15px 20px; border-radius: 8px; margin: 0 0 20px 0;">
-                Buchungsbestätigung – SportOase
-            </h2>
-            <div style="background: #E8F5E9; border: 1px solid #4CAF50; color: #2E7D32; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <strong>Ihre Buchung wurde erfolgreich gespeichert!</strong>
+    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="margin: 0; padding: 20px; background: #f3f4f6;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); padding: 24px 30px;">
+                <h2 style="color: white; margin: 0; font-size: 20px;">✅ Buchung bestätigt</h2>
             </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #E91E63;">
-                    <strong style="color: #E91E63;">Lehrkraft:</strong> {teacher} {f"({teacher_class})" if teacher_class else ""}
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #E91E63;">
-                    <strong style="color: #E91E63;">Datum:</strong> {date} ({weekday})
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #E91E63;">
-                    <strong style="color: #E91E63;">Stunde:</strong> {period}. Stunde
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #E91E63;">
-                    <strong style="color: #E91E63;">Angebot:</strong> {offer} – <span style="background: #E91E63; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px;">{offer_type.upper()}</span>
-                </p>
-                <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 4px;">
-                    <strong style="color: #E91E63;">Angemeldete Schüler ({count}):</strong>
-                    <div style="margin-top: 10px; margin-left: 10px;">
-                        {students_html}
+            <div style="padding: 30px;">
+                <div style="background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 16px 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+                    <strong>🎉 Deine Buchung wurde erfolgreich gespeichert!</strong>
+                </div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 20px;">
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #E91E63;">
+                        <strong style="color: #E91E63;">👤 Lehrkraft:</strong> {teacher} {f"({teacher_class})" if teacher_class else ""}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #E91E63;">
+                        <strong style="color: #E91E63;">📅 Datum:</strong> {weekday}, {date}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #E91E63;">
+                        <strong style="color: #E91E63;">⏰ Zeit:</strong> {period}. Stunde ({period_time} Uhr)
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #E91E63;">
+                        <strong style="color: #E91E63;">📋 Angebot:</strong> {offer} <span style="background: #E91E63; color: white; padding: 2px 10px; border-radius: 12px; font-size: 11px; margin-left: 8px;">{offer_type.upper()}</span>
+                    </div>
+                    <div style="padding: 16px; background: white; border-radius: 8px; margin: 12px 0;">
+                        <strong style="color: #E91E63;">👥 Angemeldete Schüler*innen ({count}):</strong>
+                        <div style="margin-top: 10px;">{students_html}</div>
                     </div>
                 </div>
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+                    Bei Fragen melde dich gerne bei Mauro.<br>
+                    SportOase – Ernst-Reuter-Schule Pattensen
+                </div>
             </div>
-            <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
-                Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de<br>
-                SportOase – Ernst-Reuter-Schule Pattensen
-            </p>
         </div>
     </body></html>
     """
 
     text = f"""
-Buchungsbestätigung – SportOase
+Buchung bestätigt – SportOase
 
-Ihre Buchung wurde erfolgreich gespeichert!
+Deine Buchung wurde erfolgreich gespeichert!
 
 Lehrkraft: {teacher} {f"({teacher_class})" if teacher_class else ""}
-Datum: {date} ({weekday})
-Stunde: {period}. Stunde
+Datum: {weekday}, {date}
+Zeit: {period}. Stunde ({period_time} Uhr)
 Angebot: {offer} ({offer_type})
 
-Angemeldete Schüler ({count}):
-{", ".join([f"{s['name']} ({s['klasse']})" for s in students])}
+Angemeldete Schüler*innen ({count}):
+{', '.join([f"{s['name']} ({s['klasse']})" for s in students])}
 
 ---
-Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
+Bei Fragen melde dich gerne bei Mauro.
 SportOase – Ernst-Reuter-Schule Pattensen
     """
 
@@ -318,49 +336,48 @@ def send_exclusive_pending_email(email, data):
     teacher = data.get('teacher_name', 'Unbekannt')
     teacher_class = data.get('teacher_class', '')
     date = format_date_german(data.get('date', 'Unbekannt'))
-    weekday = data.get('weekday', '')
+    weekday_raw = data.get('weekday', '')
+    weekday = get_german_weekday(weekday_raw)
     period = data.get('period', '?')
     period_time = PERIOD_TIMES.get(period, "")
     offer = data.get('offer_label', 'Unbekannt')
     
-    subject = f"⏳ Einzelbuchung angefragt – Freigabe ausstehend"
+    subject = f"⏳ Einzelbuchung angefragt – Warte auf Freigabe"
     
     html = f"""
     <!DOCTYPE html><html><head><meta charset="utf-8"></head>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #E91E63, #d81b60); padding: 15px 20px; border-radius: 8px 8px 0 0;">
-            <h2 style="color: white; margin: 0; font-size: 18px;">⏳ Einzelbuchung angefragt</h2>
-        </div>
-        <div style="border: 1px solid #ddd; border-top: none; padding: 20px; border-radius: 0 0 8px 8px;">
-            <div style="background: #fff3cd; border-radius: 8px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
-                <p style="margin: 0; color: #856404; font-weight: bold;">
-                    ⚠️ Ihre Buchung wartet auf Freigabe durch Mauro
-                </p>
-                <p style="margin: 10px 0 0 0; color: #856404; font-size: 14px;">
-                    Sie erhalten eine E-Mail, sobald Ihre Anfrage bearbeitet wurde.
-                </p>
+    <body style="margin: 0; padding: 20px; background: #f3f4f6;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); padding: 24px 30px;">
+                <h2 style="color: white; margin: 0; font-size: 20px;">⏳ Einzelbuchung angefragt</h2>
             </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #ffc107;">
-                    <strong style="color: #E91E63;">Lehrkraft:</strong> {teacher} {f"({teacher_class})" if teacher_class else ""}
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #ffc107;">
-                    <strong style="color: #E91E63;">Datum:</strong> {date} ({weekday})
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #ffc107;">
-                    <strong style="color: #E91E63;">Stunde:</strong> {period}. Stunde ({period_time})
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #ffc107;">
-                    <strong style="color: #E91E63;">Angebot:</strong> {offer}
-                </p>
-                <p style="margin: 10px 0; padding: 12px; background: white; border-radius: 4px; border-left: 4px solid #ffc107;">
-                    <strong style="color: #E91E63;">Schüler:</strong> {student_name} ({student_class})
-                </p>
+            <div style="padding: 30px;">
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <strong>⚠️ Deine Buchung wartet auf Freigabe durch Mauro</strong>
+                    <p style="margin: 10px 0 0 0; font-size: 14px;">Du bekommst eine E-Mail, sobald deine Anfrage bearbeitet wurde.</p>
+                </div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 20px;">
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #f59e0b;">
+                        <strong style="color: #E91E63;">👤 Lehrkraft:</strong> {teacher} {f"({teacher_class})" if teacher_class else ""}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #f59e0b;">
+                        <strong style="color: #E91E63;">📅 Datum:</strong> {weekday}, {date}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #f59e0b;">
+                        <strong style="color: #E91E63;">⏰ Zeit:</strong> {period}. Stunde ({period_time} Uhr)
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #f59e0b;">
+                        <strong style="color: #E91E63;">📋 Angebot:</strong> {offer}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #f59e0b;">
+                        <strong style="color: #E91E63;">👤 Schüler*in:</strong> {student_name} (Klasse {student_class})
+                    </div>
+                </div>
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+                    Bei Fragen melde dich gerne bei Mauro.<br>
+                    SportOase – Ernst-Reuter-Schule Pattensen
+                </div>
             </div>
-            <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
-                Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de<br>
-                SportOase – Ernst-Reuter-Schule Pattensen
-            </p>
         </div>
     </body></html>
     """
@@ -368,82 +385,89 @@ def send_exclusive_pending_email(email, data):
     text = f"""
 Einzelbuchung angefragt – SportOase
 
-Ihre Buchung wartet auf Freigabe durch Mauro.
-Sie erhalten eine E-Mail, sobald Ihre Anfrage bearbeitet wurde.
+Deine Buchung wartet auf Freigabe durch Mauro.
+Du bekommst eine E-Mail, sobald deine Anfrage bearbeitet wurde.
 
 Lehrkraft: {teacher} {f"({teacher_class})" if teacher_class else ""}
-Datum: {date} ({weekday})
-Stunde: {period}. Stunde ({period_time})
+Datum: {weekday}, {date}
+Zeit: {period}. Stunde ({period_time} Uhr)
 Angebot: {offer}
-Schüler: {student_name} ({student_class})
+Schüler*in: {student_name} (Klasse {student_class})
 
 ---
-Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
+Bei Fragen melde dich gerne bei Mauro.
 SportOase – Ernst-Reuter-Schule Pattensen
     """
     
     return send_email_resend(email, subject, html, text)
 
 
-def send_exclusive_approved_email(teacher_email, teacher_name, student_name,
-                                  date_str, period):
+def send_exclusive_approved_email(teacher_email, teacher_name, student_name, date_str, period):
     """Sendet Bestätigungs-E-Mail wenn eine exklusive Buchung genehmigt wurde"""
     from config import PERIOD_TIMES
 
     period_time = PERIOD_TIMES.get(period, "")
     date_formatted = format_date_german(date_str)
 
-    subject = f"✅ Exklusive Buchung genehmigt – SportOase"
+    subject = f"✅ Einzelbuchung genehmigt – SportOase"
 
     html = f"""
     <!DOCTYPE html><html><head><meta charset="utf-8"></head>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #E91E63; margin: 0;">🎉 Exklusive Buchung genehmigt!</h2>
+    <body style="margin: 0; padding: 20px; background: #f3f4f6;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); padding: 24px 30px;">
+                <h2 style="color: white; margin: 0; font-size: 20px;">🎉 Einzelbuchung genehmigt!</h2>
+            </div>
+            <div style="padding: 30px;">
+                <div style="background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <strong>Hallo {teacher_name}!</strong>
+                    <p style="margin: 10px 0 0 0;">Deine exklusive Einzelbuchung wurde <strong>von Mauro genehmigt</strong>. 🎉</p>
+                </div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 20px;">
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #22c55e;">
+                        <strong style="color: #E91E63;">📅 Datum:</strong> {date_formatted}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #22c55e;">
+                        <strong style="color: #E91E63;">⏰ Zeit:</strong> {period}. Stunde ({period_time} Uhr)
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #22c55e;">
+                        <strong style="color: #E91E63;">👤 Schüler*in:</strong> {student_name}
+                    </div>
+                </div>
+                <div style="background: #dbeafe; border: 1px solid #93c5fd; color: #1e40af; padding: 14px 18px; border-radius: 10px; margin-top: 20px; font-size: 14px;">
+                    💡 Der Slot ist jetzt vollständig für deine*n Schüler*in reserviert.
+                </div>
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+                    Bei Fragen melde dich gerne bei Mauro.<br>
+                    SportOase – Ernst-Reuter-Schule Pattensen
+                </div>
+            </div>
         </div>
-        <div style="background: #d4edda; border-radius: 8px; padding: 20px; border-left: 4px solid #28a745;">
-            <p>Hallo <strong>{teacher_name}</strong>,</p>
-            <p>Ihre exklusive Buchung wurde <strong>von Mauro genehmigt</strong>.</p>
-            <p>Der gesamte Slot ist jetzt für Ihren Schüler reserviert:</p>
-            <ul style="list-style: none; padding: 0;">
-                <li>📅 <strong>Datum:</strong> {date_formatted}</li>
-                <li>⏰ <strong>Stunde:</strong> {period}. Stunde ({period_time})</li>
-                <li>👤 <strong>Schüler:</strong> {student_name}</li>
-            </ul>
-            <p style="color: #155724; font-weight: bold;">
-                Der Slot ist jetzt vollständig für Ihren Schüler reserviert.
-            </p>
-        </div>
-        <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
-            Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de<br>
-            SportOase – Ernst-Reuter-Schule Pattensen
-        </p>
     </body></html>
     """
 
     text = f"""
-Exklusive Buchung genehmigt – SportOase
+Einzelbuchung genehmigt – SportOase
 
-Hallo {teacher_name},
+Hallo {teacher_name}!
 
-Ihre exklusive Buchung wurde von Mauro genehmigt.
+Deine exklusive Einzelbuchung wurde von Mauro genehmigt.
 
 Datum: {date_formatted}
-Stunde: {period}. Stunde ({period_time})
-Schüler: {student_name}
+Zeit: {period}. Stunde ({period_time} Uhr)
+Schüler*in: {student_name}
 
-Der Slot ist jetzt vollständig für Ihren Schüler reserviert.
+Der Slot ist jetzt vollständig für deine*n Schüler*in reserviert.
 
 ---
-Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
+Bei Fragen melde dich gerne bei Mauro.
 SportOase – Ernst-Reuter-Schule Pattensen
     """
 
     return send_email_resend(teacher_email, subject, html, text)
 
 
-def send_exclusive_rejected_email(teacher_email, teacher_name, student_name,
-                                  date_str, period, rejection_reason=None):
+def send_exclusive_rejected_email(teacher_email, teacher_name, student_name, date_str, period, rejection_reason=None):
     """Sendet Ablehnungs-E-Mail wenn eine exklusive Buchung abgelehnt wurde"""
     from config import PERIOD_TIMES
 
@@ -454,61 +478,66 @@ def send_exclusive_rejected_email(teacher_email, teacher_name, student_name,
     reason_text = ""
     if rejection_reason:
         reason_html = f"""
-            <div style="background: #fff3cd; border-radius: 6px; padding: 12px; margin: 15px 0; border-left: 4px solid #ffc107;">
-                <strong>Begründung von Mauro:</strong><br>
-                {rejection_reason}
+            <div style="background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; padding: 14px 18px; border-radius: 10px; margin: 16px 0;">
+                <strong>💬 Begründung von Mauro:</strong><br>
+                <span style="display: block; margin-top: 8px;">{rejection_reason}</span>
             </div>
         """
         reason_text = f"\nBegründung von Mauro:\n{rejection_reason}\n"
 
-    subject = f"❌ Exklusive Buchung abgelehnt – SportOase"
+    subject = f"❌ Einzelbuchung abgelehnt – SportOase"
 
     html = f"""
     <!DOCTYPE html><html><head><meta charset="utf-8"></head>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #E91E63; margin: 0;">Exklusive Buchung abgelehnt</h2>
+    <body style="margin: 0; padding: 20px; background: #f3f4f6;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); padding: 24px 30px;">
+                <h2 style="color: white; margin: 0; font-size: 20px;">Einzelbuchung abgelehnt</h2>
+            </div>
+            <div style="padding: 30px;">
+                <div style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <strong>Hallo {teacher_name},</strong>
+                    <p style="margin: 10px 0 0 0;">Leider wurde deine exklusive Einzelbuchung <strong>von Mauro abgelehnt</strong>.</p>
+                </div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 20px;">
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #ef4444;">
+                        <strong style="color: #E91E63;">📅 Datum:</strong> {date_formatted}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #ef4444;">
+                        <strong style="color: #E91E63;">⏰ Zeit:</strong> {period}. Stunde ({period_time} Uhr)
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #ef4444;">
+                        <strong style="color: #E91E63;">👤 Schüler*in:</strong> {student_name}
+                    </div>
+                </div>
+                {reason_html}
+                <div style="background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; padding: 14px 18px; border-radius: 10px; margin-top: 16px; font-size: 14px;">
+                    💡 Du kannst deine*n Schüler*in gerne regulär (ohne exklusive Reservierung) anmelden, falls Plätze verfügbar sind.
+                </div>
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+                    Bei Fragen melde dich gerne bei Mauro.<br>
+                    SportOase – Ernst-Reuter-Schule Pattensen
+                </div>
+            </div>
         </div>
-        <div style="background: #f8d7da; border-radius: 8px; padding: 20px; border-left: 4px solid #dc3545;">
-            <p>Hallo <strong>{teacher_name}</strong>,</p>
-            <p>Leider wurde Ihre exklusive Buchung <strong>von Mauro abgelehnt</strong>:</p>
-            <ul style="list-style: none; padding: 0;">
-                <li>📅 <strong>Datum:</strong> {date_formatted}</li>
-                <li>⏰ <strong>Stunde:</strong> {period}. Stunde ({period_time})</li>
-                <li>👤 <strong>Schüler:</strong> {student_name}</li>
-            </ul>
-            {reason_html}
-            <p style="color: #721c24;">
-                Die Buchung wurde storniert. Sie können den Schüler gerne regulär (ohne exklusive Reservierung) anmelden, falls Plätze verfügbar sind.
-            </p>
-            <p>
-                Bei Fragen oder Rückfragen wenden Sie sich bitte direkt an Mauro.
-            </p>
-        </div>
-        <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
-            Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de<br>
-            SportOase – Ernst-Reuter-Schule Pattensen
-        </p>
     </body></html>
     """
 
     text = f"""
-Exklusive Buchung abgelehnt – SportOase
+Einzelbuchung abgelehnt – SportOase
 
 Hallo {teacher_name},
 
-Leider wurde Ihre exklusive Buchung von Mauro abgelehnt:
+Leider wurde deine exklusive Einzelbuchung von Mauro abgelehnt.
 
 Datum: {date_formatted}
-Stunde: {period}. Stunde ({period_time})
-Schüler: {student_name}
+Zeit: {period}. Stunde ({period_time} Uhr)
+Schüler*in: {student_name}
 {reason_text}
-Die Buchung wurde storniert. Sie können den Schüler gerne regulär (ohne exklusive Reservierung) anmelden, falls Plätze verfügbar sind.
-
-Bei Fragen oder Rückfragen wenden Sie sich bitte direkt an Mauro.
+Du kannst deine*n Schüler*in gerne regulär (ohne exklusive Reservierung) anmelden, falls Plätze verfügbar sind.
 
 ---
-Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
+Bei Fragen melde dich gerne bei Mauro.
 SportOase – Ernst-Reuter-Schule Pattensen
     """
 
@@ -525,70 +554,72 @@ def send_booking_removed_due_to_exclusive(teacher_email, teacher_name, booking_i
     students = booking_info.get('students', [])
     offer = booking_info.get('offer_label', 'Unbekannt')
     
+    students_html = "".join([
+        f'<div style="padding: 6px 10px; background: white; border-radius: 4px; margin: 4px 0;">• {s.get("name", "?")} (Klasse {s.get("klasse", "?")})</div>'
+        for s in students
+    ]) if students else '<div>Keine Schüler*innen</div>'
+    
     students_list = ", ".join([f"{s.get('name', '?')} ({s.get('klasse', '?')})" for s in students])
     
-    subject = f"⚠️ Buchung storniert – Exklusivfreigabe – SportOase"
+    subject = f"⚠️ Buchung storniert – SportOase"
     
     html = f"""
     <!DOCTYPE html><html><head><meta charset="utf-8"></head>
-    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #E91E63, #d81b60); padding: 15px 20px; border-radius: 8px 8px 0 0;">
-            <h2 style="color: white; margin: 0; font-size: 18px;">⚠️ Buchung storniert</h2>
-        </div>
-        <div style="border: 1px solid #ddd; border-top: none; padding: 20px; border-radius: 0 0 8px 8px;">
-            <div style="background: #fff3cd; border-radius: 8px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
-                <p style="margin: 0; color: #856404;">
+    <body style="margin: 0; padding: 20px; background: #f3f4f6;">
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); padding: 24px 30px;">
+                <h2 style="color: white; margin: 0; font-size: 20px;">⚠️ Buchung storniert</h2>
+            </div>
+            <div style="padding: 30px;">
+                <div style="background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; padding: 16px 20px; border-radius: 10px; margin-bottom: 20px;">
                     <strong>Hallo {teacher_name},</strong>
-                </p>
-                <p style="margin: 10px 0 0 0; color: #856404;">
-                    Leider wurde Ihre Buchung automatisch storniert, da eine <strong>exklusive Einzelbuchung</strong> für denselben Slot von Mauro genehmigt wurde.
-                </p>
+                    <p style="margin: 10px 0 0 0;">Leider wurde deine Buchung automatisch storniert, da eine <strong>exklusive Einzelbuchung</strong> für denselben Slot von Mauro genehmigt wurde.</p>
+                </div>
+                <div style="background: #f8fafc; border-radius: 10px; padding: 20px;">
+                    <h4 style="margin: 0 0 15px 0; color: #E91E63; font-size: 14px;">📋 Deine stornierte Buchung:</h4>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #ef4444;">
+                        <strong style="color: #E91E63;">📅 Datum:</strong> {date_formatted}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #ef4444;">
+                        <strong style="color: #E91E63;">⏰ Zeit:</strong> {period}. Stunde ({period_time} Uhr)
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #ef4444;">
+                        <strong style="color: #E91E63;">📚 Angebot:</strong> {offer}
+                    </div>
+                    <div style="padding: 12px 16px; background: white; border-radius: 8px; margin: 8px 0; border-left: 4px solid #ef4444;">
+                        <strong style="color: #E91E63;">👥 Schüler*innen:</strong>
+                        <div style="margin-top: 8px;">{students_html}</div>
+                    </div>
+                </div>
+                <div style="background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; padding: 14px 18px; border-radius: 10px; margin-top: 16px; font-size: 14px;">
+                    💡 Bitte buche deine Schüler*innen für einen anderen Slot neu ein.
+                </div>
+                <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
+                    Bei Fragen melde dich gerne bei Mauro.<br>
+                    SportOase – Ernst-Reuter-Schule Pattensen
+                </div>
             </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 15px;">
-                <h4 style="margin: 0 0 15px 0; color: #E91E63;">Ihre stornierte Buchung:</h4>
-                <p style="margin: 8px 0; padding: 10px; background: white; border-radius: 4px; border-left: 4px solid #dc3545;">
-                    <strong>📅 Datum:</strong> {date_formatted}
-                </p>
-                <p style="margin: 8px 0; padding: 10px; background: white; border-radius: 4px; border-left: 4px solid #dc3545;">
-                    <strong>⏰ Stunde:</strong> {period}. Stunde ({period_time})
-                </p>
-                <p style="margin: 8px 0; padding: 10px; background: white; border-radius: 4px; border-left: 4px solid #dc3545;">
-                    <strong>📚 Angebot:</strong> {offer}
-                </p>
-                <p style="margin: 8px 0; padding: 10px; background: white; border-radius: 4px; border-left: 4px solid #dc3545;">
-                    <strong>👥 Schüler:</strong> {students_list}
-                </p>
-            </div>
-            <p style="color: #666; font-size: 14px;">
-                Bitte buchen Sie Ihre Schüler für einen anderen Slot neu ein. 
-                Bei Fragen wenden Sie sich bitte an Mauro.
-            </p>
-            <p style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px;">
-                Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de<br>
-                SportOase – Ernst-Reuter-Schule Pattensen
-            </p>
         </div>
     </body></html>
     """
     
     text = f"""
-Buchung storniert – Exklusivfreigabe – SportOase
+Buchung storniert – SportOase
 
 Hallo {teacher_name},
 
-Leider wurde Ihre Buchung automatisch storniert, da eine exklusive Einzelbuchung für denselben Slot von Mauro genehmigt wurde.
+Leider wurde deine Buchung automatisch storniert, da eine exklusive Einzelbuchung für denselben Slot von Mauro genehmigt wurde.
 
-Ihre stornierte Buchung:
+Deine stornierte Buchung:
 - Datum: {date_formatted}
-- Stunde: {period}. Stunde ({period_time})
+- Zeit: {period}. Stunde ({period_time} Uhr)
 - Angebot: {offer}
-- Schüler: {students_list}
+- Schüler*innen: {students_list}
 
-Bitte buchen Sie Ihre Schüler für einen anderen Slot neu ein.
-Bei Fragen wenden Sie sich bitte an Mauro.
+Bitte buche deine Schüler*innen für einen anderen Slot neu ein.
 
 ---
-Bei Fragen wenden Sie sich bitte an: morelli.maurizio@kgs-pattensen.de
+Bei Fragen melde dich gerne bei Mauro.
 SportOase – Ernst-Reuter-Schule Pattensen
     """
     
