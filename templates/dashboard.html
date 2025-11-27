@@ -111,28 +111,43 @@
                 <div class="help-card help-card-exclusive">
                     <h4>⭐ Einzelbuchung (Exklusiv-Slot)</h4>
                     <p class="exclusive-intro">
-                        In besonderen Fällen kann ein Slot exklusiv für einen einzelnen Schüler reserviert werden.
+                        In besonderen Fällen kann ein Slot exklusiv für einen
+                        einzelnen Schüler reserviert werden.
                     </p>
                     <div class="exclusive-info-list">
                         <div class="exclusive-step">
                             <span class="step-icon">1️⃣</span>
-                            <span>Wählen Sie beim Buchen <strong>nur 1 Schüler*in</strong> aus</span>
+                            <span
+                                >Wählen Sie beim Buchen
+                                <strong>nur 1 Schüler*in</strong> aus</span
+                            >
                         </div>
                         <div class="exclusive-step">
                             <span class="step-icon">2️⃣</span>
-                            <span>Aktivieren Sie die Checkbox <strong>"Exklusive Einzelbuchung"</strong></span>
+                            <span
+                                >Aktivieren Sie die Checkbox
+                                <strong>"Exklusive Einzelbuchung"</strong></span
+                            >
                         </div>
                         <div class="exclusive-step">
                             <span class="step-icon">3️⃣</span>
-                            <span>Ihre Anfrage wird an <strong>Mauro</strong> zur Freigabe gesendet</span>
+                            <span
+                                >Ihre Anfrage wird an <strong>Mauro</strong> zur
+                                Freigabe gesendet</span
+                            >
                         </div>
                         <div class="exclusive-step">
                             <span class="step-icon">4️⃣</span>
-                            <span>Sie erhalten eine <strong>E-Mail</strong> bei Genehmigung/Ablehnung</span>
+                            <span
+                                >Sie erhalten eine <strong>E-Mail</strong> bei
+                                Genehmigung/Ablehnung</span
+                            >
                         </div>
                     </div>
                     <p class="exclusive-note">
-                        <strong>Hinweis:</strong> Genehmigte Einzelbuchungen blockieren den gesamten Slot – keine weiteren Buchungen möglich.
+                        <strong>Hinweis:</strong> Genehmigte Einzelbuchungen
+                        blockieren den gesamten Slot – keine weiteren Buchungen
+                        möglich.
                     </p>
                 </div>
 
@@ -308,7 +323,11 @@
                             Offenheit, sowie die unzähligen Wühlereien durch
                             Warenkörbe, dieses Projekt möglich zu machen. Ihre
                             Bereitschaft, neue Wege zu gehen, hat den Grundstein
-                            für die erfolgreiche Umsetzung gelegt.
+                            für die erfolgreiche Umsetzung gelegt. Auch dem
+                            Sekretariat,<strong>Roland</strong>
+                            und den Hausmeistern Benni und Sascha, für die
+                            logistische Meisterleistung bei der Annahme und
+                            Weiterleitung meiner Pakete.
                         </p>
 
                         <p>
@@ -349,8 +368,9 @@
                                 >Schülerinnen und Schüler des
                                 Freiday-Projekts</strong
                             >
-                            sowie an alle weiteren engagierten Jugendlichen, die
-                            beim Aufbau, der Ideenfindung und der Umsetzung der
+                            insbesondere Azad, Hezha. Modi und Mats, sowie an
+                            alle weiteren engagierten Jugendlichen, die beim
+                            Aufbau, der Ideenfindung und der Umsetzung der
                             Vision geholfen haben. Ihr habt mit eurem Einsatz
                             und eurer Energie maßgeblich dazu beigetragen, dass
                             die Sportoase zu dem geworden ist, was sie heute
@@ -455,17 +475,27 @@
                             <!-- Exklusiver Slot - Einzelangebot -->
                             <div class="period-header exclusive-header">
                                 <div class="slot-detail">
-                                    <span class="exclusive-star">⭐</span> Einzelangebot
+                                    <span class="exclusive-star">⭐</span>
+                                    Einzelangebot
                                 </div>
                             </div>
                             <div class="exclusive-info">
-                                {% set exc_booking = day.schedule[period-1].exclusive_booking %}
-                                {% set can_see_exc = (user_role == 'admin') or (exc_booking.teacher_id == current_user_id) %}
+                                {% set exc_booking =
+                                day.schedule[period-1].exclusive_booking %} {%
+                                set can_see_exc = (user_role == 'admin') or
+                                (exc_booking.teacher_id == current_user_id) %}
                                 {% if can_see_exc %}
-                                <span class="exclusive-student">{{ exc_booking.students[0].name }} ({{ exc_booking.students[0].klasse }})</span>
-                                <span class="exclusive-teacher">von {{ exc_booking.teacher_name }}</span>
+                                <span class="exclusive-student"
+                                    >{{ exc_booking.students[0].name }} ({{
+                                    exc_booking.students[0].klasse }})</span
+                                >
+                                <span class="exclusive-teacher"
+                                    >von {{ exc_booking.teacher_name }}</span
+                                >
                                 {% else %}
-                                <span class="exclusive-student">Reserviert</span>
+                                <span class="exclusive-student"
+                                    >Reserviert</span
+                                >
                                 {% endif %}
                             </div>
                             {% elif day.schedule[period-1].blocked %}
@@ -551,11 +581,11 @@
                                 {% if slot.pending_exclusive %}
                                 <div class="pending-exclusive-hint">
                                     <span class="pending-icon">⏳</span>
-                                    <span class="pending-text">Einzelbuchung angefragt</span>
+                                    <span class="pending-text"
+                                        >Einzelbuchung angefragt</span
+                                    >
                                 </div>
-                                {% endif %}
-
-                                {% if slot.bookings %}
+                                {% endif %} {% if slot.bookings %}
                                 <div class="slot-students-list">
                                     {% for booking in slot.bookings %} {% set
                                     can_see = (user_role == 'admin') or
@@ -581,7 +611,9 @@
                                     </span>
                                     <span class="slot-availability">
                                         {% if slot.is_exclusive %}
-                                        <span class="exclusive-text">🔒 Exklusiv</span>
+                                        <span class="exclusive-text"
+                                            >🔒 Exklusiv</span
+                                        >
                                         {% elif slot.can_book %}
                                         <span class="availability-text"
                                             >{{ slot.total_students }}/5
