@@ -666,6 +666,145 @@ def dashboard():
                          monday_date=monday.strftime('%d.%m.%Y'),
                          friday_date=friday.strftime('%d.%m.%Y'))
 
+# Route: Kalenderansicht (Monats-/Jahresübersicht)
+@app.route('/calendar')
+@app.route('/calendar/<int:year>/<int:month>')
+@login_required
+def calendar_view(year=None, month=None):
+    """Monats-/Jahreskalenderansicht mit Buchungsübersicht"""
+    import calendar
+    from models import get_bookings_for_week, get_blocked_slots_for_week
+    
+    # Aktuelles Datum
+    today = datetime.now(get_berlin_tz()).date()
+    
+    # Standard: aktueller Monat
+    if year is None:
+        year = today.year
+    if month is None:
+        month = today.month
+    
+    # Validierung
+    if month < 1:
+        month = 12
+        year -= 1
+    elif month > 12:
+        month = 1
+        year += 1
+    
+    # Deutsche Monatsnamen
+    month_names_de = {
+        1: 'Januar', 2: 'Februar', 3: 'März', 4: 'April',
+        5: 'Mai', 6: 'Juni', 7: 'Juli', 8: 'August',
+        9: 'September', 10: 'Oktober', 11: 'November', 12: 'Dezember'
+    }
+    
+    # Kalender erstellen
+    cal = calendar.Calendar(firstweekday=0)  # Montag als erster Tag
+    month_days = cal.monthdayscalendar(year, month)
+    
+    # Ersten und letzten Tag des Monats ermitteln
+    first_day = date(year, month, 1)
+    if month == 12:
+        last_day = date(year + 1, 1, 1) - timedelta(days=1)
+    else:
+        last_day = date(year, month + 1, 1) - timedelta(days=1)
+    
+    # Buchungen und blockierte Slots für den gesamten Monat holen
+    from models import Booking, BlockedSlot
+    
+    month_bookings = Booking.query.filter(
+        Booking.date >= first_day.strftime('%Y-%m-%d'),
+        Booking.date <= last_day.strftime('%Y-%m-%d')
+    ).all()
+    
+    month_blocked = BlockedSlot.query.filter(
+        BlockedSlot.date >= first_day.strftime('%Y-%m-%d'),
+        BlockedSlot.date <= last_day.strftime('%Y-%m-%d')
+    ).all()
+    
+    # Zähle Buchungen pro Tag
+    bookings_per_day = {}
+    for booking in month_bookings:
+        day_key = booking.date
+        if day_key not in bookings_per_day:
+            bookings_per_day[day_key] = 0
+        students = json.loads(booking.students_json) if booking.students_json else []
+        bookings_per_day[day_key] += len(students)
+    
+    # Zähle blockierte Slots pro Tag
+    blocked_per_day = {}
+    blocked_reasons = {}
+    for blocked in month_blocked:
+        day_key = blocked.date
+        if day_key not in blocked_per_day:
+            blocked_per_day[day_key] = 0
+            blocked_reasons[day_key] = blocked.reason or 'Blockiert'
+        blocked_per_day[day_key] += 1
+    
+    # Kalenderwochen erstellen mit Infos
+    weeks = []
+    for week in month_days:
+        week_data = []
+        for day_num in week:
+            if day_num == 0:
+                week_data.append(None)
+            else:
+                day_date = date(year, month, day_num)
+                day_str = day_date.strftime('%Y-%m-%d')
+                is_weekend = day_date.weekday() in [5, 6]
+                is_today = day_date == today
+                is_past = day_date < today
+                
+                booking_count = bookings_per_day.get(day_str, 0)
+                blocked_count = blocked_per_day.get(day_str, 0)
+                blocked_reason = blocked_reasons.get(day_str, '')
+                
+                # Status ermitteln
+                if is_weekend:
+                    status = 'weekend'
+                elif blocked_count >= 6:  # Alle 6 Stunden blockiert
+                    status = 'blocked'
+                elif blocked_count > 0:
+                    status = 'partial_blocked'
+                elif booking_count >= 30:  # 6 Stunden * 5 Plätze = 30
+                    status = 'full'
+                elif booking_count > 0:
+                    status = 'has_bookings'
+                else:
+                    status = 'free'
+                
+                week_data.append({
+                    'day': day_num,
+                    'date': day_str,
+                    'is_weekend': is_weekend,
+                    'is_today': is_today,
+                    'is_past': is_past,
+                    'booking_count': booking_count,
+                    'blocked_count': blocked_count,
+                    'blocked_reason': blocked_reason,
+                    'status': status
+                })
+        weeks.append(week_data)
+    
+    # Navigation
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+    
+    return render_template('calendar.html',
+                         year=year,
+                         month=month,
+                         month_name=month_names_de[month],
+                         weeks=weeks,
+                         today=today,
+                         prev_year=prev_year,
+                         prev_month=prev_month,
+                         next_year=next_year,
+                         next_month=next_month,
+                         user_role=session.get('user_role'))
+
 # Route: Buchungsseite
 @app.route('/book/<date_str>/<int:period>', methods=['GET', 'POST'])
 @login_required
