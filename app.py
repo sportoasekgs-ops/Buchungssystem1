@@ -384,6 +384,11 @@ def oauth_callback():
             flash('Fehler beim Erstellen des Benutzers.', 'error')
             return redirect(url_for('login'))
         
+        # WICHTIG: Session komplett leeren, um OAuth-Token/userinfo zu entfernen
+        # Authlib speichert große Datenmengen in der Session, die das Cookie-Limit überschreiten
+        session.clear()
+        
+        # Nur die wesentlichen Benutzerdaten speichern
         session['user_id'] = user['id']
         session['user_username'] = user['username']
         session['user_email'] = user['email']
