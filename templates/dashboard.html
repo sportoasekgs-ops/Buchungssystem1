@@ -14,7 +14,7 @@
                 <span class="card-text">Datum:</span>
                 <input type="date" id="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()" class="date-input-inline">
             </form>
-            <a href="{{ url_for('calendar_view', year=selected_date[:4], month=selected_date[5:7]) }}" class="calendar-btn" title="Kalenderansicht öffnen">
+            <a href="{{ url_for('calendar_view', year=selected_date.year, month=selected_date.month) }}" class="calendar-btn" title="Kalenderansicht öffnen">
                 🗓️
             </a>
         </div>
