@@ -1893,6 +1893,63 @@ def admin_unblock_slot():
     
     return redirect(request.referrer or url_for('dashboard'))
 
+@app.route('/admin/setup_holidays_2026', methods=['POST'])
+@admin_required
+def admin_setup_holidays_2026():
+    """Legt alle Niedersachsen-Ferien und Feiertage für 2026 automatisch an"""
+    from models import bulk_block_slots
+    
+    # CSRF-Token Validierung
+    csrf_token = request.form.get('csrf_token', '')
+    if not validate_csrf_token(csrf_token):
+        flash('Ungültiges Sicherheits-Token.', 'error')
+        return redirect(url_for('admin_bulk_block'))
+    
+    admin_id = session.get('user_id')
+    total_blocked = 0
+    total_skipped = 0
+    
+    # Niedersachsen Schulferien 2026
+    holidays_2026 = [
+        # Winterferien: 02.02. - 03.02.2026
+        ('2026-02-02', '2026-02-03', '❄️ Winterferien', '❄️'),
+        # Osterferien: 23.03. - 04.04.2026
+        ('2026-03-23', '2026-04-04', '🐣 Osterferien', '🐣'),
+        # Pfingstferien: 26.05.2026
+        ('2026-05-26', '2026-05-26', '🌸 Pfingstferien', '🌸'),
+        # Sommerferien: 16.07. - 26.08.2026
+        ('2026-07-16', '2026-08-26', '☀️ Sommerferien', '☀️'),
+        # Herbstferien: 12.10. - 24.10.2026
+        ('2026-10-12', '2026-10-24', '🍂 Herbstferien', '🍂'),
+        # Weihnachtsferien: 23.12.2026 - 06.01.2027
+        ('2026-12-23', '2027-01-06', '🎄 Weihnachtsferien', '🎄'),
+    ]
+    
+    # Gesetzliche Feiertage Niedersachsen 2026
+    public_holidays_2026 = [
+        ('2026-01-01', '2026-01-01', '🎆 Neujahr', '🎆'),
+        ('2026-04-03', '2026-04-03', '✝️ Karfreitag', '✝️'),
+        ('2026-04-06', '2026-04-06', '✝️ Ostermontag', '✝️'),
+        ('2026-05-01', '2026-05-01', '🔧 Tag der Arbeit', '🔧'),
+        ('2026-05-14', '2026-05-14', '☁️ Christi Himmelfahrt', '☁️'),
+        ('2026-05-25', '2026-05-25', '🕊️ Pfingstmontag', '🕊️'),
+        ('2026-10-03', '2026-10-03', '🇩🇪 Tag der Deutschen Einheit', '🇩🇪'),
+        ('2026-10-31', '2026-10-31', '⛪ Reformationstag', '⛪'),
+        ('2026-12-25', '2026-12-25', '🎄 1. Weihnachtstag', '🎄'),
+        ('2026-12-26', '2026-12-26', '🎄 2. Weihnachtstag', '🎄'),
+    ]
+    
+    all_holidays = holidays_2026 + public_holidays_2026
+    
+    for start_date, end_date, reason, icon in all_holidays:
+        result = bulk_block_slots(start_date, end_date, admin_id, reason, icon=icon)
+        if result['success']:
+            total_blocked += result['blocked_count']
+            total_skipped += result['skipped_count']
+    
+    flash(f'✅ Ferien 2026 angelegt: {total_blocked} Slots blockiert, {total_skipped} bereits vorhanden.', 'success')
+    return redirect(url_for('admin_bulk_block'))
+
 @app.route('/admin/bulk_block', methods=['GET', 'POST'])
 @admin_required
 def admin_bulk_block():

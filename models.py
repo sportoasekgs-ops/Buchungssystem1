@@ -530,7 +530,7 @@ def get_all_blocked_slots():
     blocked_slots = BlockedSlot.query.order_by(BlockedSlot.date.desc(), BlockedSlot.period).all()
     return [b.to_dict() for b in blocked_slots]
 
-def bulk_block_slots(start_date, end_date, admin_id, reason='Ferien', periods=None):
+def bulk_block_slots(start_date, end_date, admin_id, reason='Ferien', periods=None, icon=None):
     """
     Blockiert alle Slots in einem Zeitraum (z.B. für Ferien).
     
@@ -540,11 +540,20 @@ def bulk_block_slots(start_date, end_date, admin_id, reason='Ferien', periods=No
         admin_id: ID des Admins der die Sperrung durchführt
         reason: Grund für die Sperrung
         periods: Liste der Stunden (1-6), None = alle Stunden
+        icon: Emoji-Icon für die Blockierung (optional)
     
     Returns:
         Dict mit 'success', 'blocked_count', 'skipped_count'
     """
     from datetime import datetime, timedelta
+    
+    # Icon aus reason extrahieren, falls nicht explizit angegeben
+    if icon is None and reason:
+        first_char = reason[0] if reason else ''
+        if ord(first_char) > 127:
+            icon = first_char
+        else:
+            icon = '🔧'
     
     try:
         start = datetime.strptime(start_date, '%Y-%m-%d')
@@ -572,6 +581,7 @@ def bulk_block_slots(start_date, end_date, admin_id, reason='Ferien', periods=No
                             weekday=weekday,
                             period=period,
                             reason=reason,
+                            icon=icon,
                             blocked_by=admin_id,
                             created_at=datetime.now()
                         )

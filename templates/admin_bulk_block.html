@@ -14,6 +14,18 @@
         <a href="{{ url_for('manage_slots') }}" class="btn btn-secondary">Slot-Namen</a>
     </div>
     
+    <!-- Schnell-Setup für Ferien 2026 -->
+    <div class="quick-setup-section" style="margin-bottom: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 12px; border: 2px solid #ff9800;">
+        <h3 style="margin: 0 0 0.5rem 0; color: #e65100;">🗓️ Niedersachsen Ferien 2026 - Schnell-Setup</h3>
+        <p style="margin: 0 0 1rem 0; color: #bf360c;">Legt automatisch alle Schulferien und Feiertage für 2026 an (Winterferien, Osterferien, Pfingstferien, Sommerferien, Herbstferien, Weihnachtsferien + gesetzliche Feiertage).</p>
+        <form method="POST" action="{{ url_for('admin_setup_holidays_2026') }}" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="btn" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; font-weight: bold; padding: 0.75rem 1.5rem;">
+                🚀 Alle Ferien 2026 jetzt anlegen
+            </button>
+        </form>
+    </div>
+    
     <div class="bulk-block-section">
         <!-- Sperren-Karte -->
         <div class="bulk-block-card">
