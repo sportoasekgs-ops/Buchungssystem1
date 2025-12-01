@@ -238,3 +238,5 @@
 [x] 233. ✅ Ausführliches Logging für IServ-Rollen hinzugefügt
 [x] 234. ✅ Scope von 'groups' auf 'roles' geändert
 [x] 235. ✅ Workflow erfolgreich neu gestartet mit vereinfachter Rollen-Prüfung
+[x] 236. ✅ Rekursive Rollen-Extraktion für verschachtelte IServ-Strukturen hinzugefügt
+[x] 237. ✅ Architect-Feedback eingearbeitet (nested dict/list handling)
