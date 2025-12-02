@@ -253,3 +253,12 @@
 [x] 248. ✅ All progress tracker items marked as complete [x]
 [x] 249. ✅ 🎉 REPLIT ENVIRONMENT MIGRATION FULLY COMPLETED - December 2, 2025
 [x] 250. ✅ SportOase App is 100% operational and ready for development!
+[x] 251. ✅ OAuth-Konfiguration erweitert: Scopes 'roles' UND 'groups' für maximale Kompatibilität
+[x] 252. ✅ Neue extract_groups_from_userinfo() Funktion für Gruppen-Fallback
+[x] 253. ✅ determine_user_role() prüft jetzt SOWOHL Rollen als auch Gruppen
+[x] 254. ✅ Ausführliches Debug-Logging für OAuth-Daten hinzugefügt
+[x] 255. ✅ Debug-Endpunkt /oauth/debug für Admins erstellt
+[x] 256. ✅ Einheitliche Rechte: Lehrer, Mitarbeitende, Pädagogische Mitarbeiter = 'teacher' Rolle
+[x] 257. ✅ Erweiterte allowed_keywords Liste: mitarbeitende, sekretariat, verwaltung
+[x] 258. ✅ Workflow neu gestartet - OAuth-Verbesserungen aktiv
+[x] 259. ✅ IServ OAuth Debugging verbessert - alle Daten werden im Server-Log angezeigt

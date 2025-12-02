@@ -410,6 +410,91 @@ def logout():
     flash('Sie wurden abgemeldet.', 'info')
     return redirect(url_for('login'))
 
+# Route: OAuth Debug - Zeigt Rollen/Gruppen-Daten von IServ
+@app.route('/oauth/debug')
+def oauth_debug():
+    """
+    Debug-Route: Zeigt die OAuth-Daten von IServ (nur für Admins sichtbar).
+    Nützlich um zu sehen, welche Rollen/Gruppen IServ übergibt.
+    """
+    if 'user_id' not in session:
+        flash('Bitte melden Sie sich an.', 'error')
+        return redirect(url_for('login'))
+    
+    user = get_user_by_id(session['user_id'])
+    if not user or user['role'] != 'admin':
+        flash('Nur für Administratoren zugänglich.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    return '''
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <title>OAuth Debug - SportOase</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+            h1 { color: #333; }
+            .card { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            .info { color: #666; }
+            code { background: #e8e8e8; padding: 2px 6px; border-radius: 4px; }
+            pre { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 8px; overflow-x: auto; }
+            .success { color: #22c55e; }
+            .warning { color: #f59e0b; }
+            a { color: #3b82f6; }
+        </style>
+    </head>
+    <body>
+        <h1>OAuth Debug Info</h1>
+        
+        <div class="card">
+            <h2>Aktuelle Session</h2>
+            <p><strong>User ID:</strong> ''' + str(session.get('user_id', 'N/A')) + '''</p>
+            <p><strong>Username:</strong> ''' + str(session.get('user_username', 'N/A')) + '''</p>
+            <p><strong>E-Mail:</strong> ''' + str(session.get('user_email', 'N/A')) + '''</p>
+            <p><strong>Rolle:</strong> ''' + str(session.get('user_role', 'N/A')) + '''</p>
+        </div>
+        
+        <div class="card">
+            <h2>IServ OAuth Konfiguration</h2>
+            <p><strong>Angeforderte Scopes:</strong> <code>openid profile email roles groups</code></p>
+            <p class="info">Diese Scopes müssen in IServ Admin → Single-Sign-On für diese App aktiviert sein.</p>
+        </div>
+        
+        <div class="card">
+            <h2>So testen Sie die Rollen-Erkennung</h2>
+            <ol>
+                <li>Loggen Sie sich aus: <a href="/logout">Logout</a></li>
+                <li>Loggen Sie sich erneut über IServ ein</li>
+                <li>Prüfen Sie die Server-Logs (im Terminal/Workflow)</li>
+                <li>Die Logs zeigen genau, welche Rollen/Gruppen IServ übergibt</li>
+            </ol>
+            <p class="warning">⚠️ Die OAuth-Daten werden aus Sicherheitsgründen nicht in der Session gespeichert.</p>
+        </div>
+        
+        <div class="card">
+            <h2>IServ Admin Einstellungen</h2>
+            <p>In IServ unter <strong>Verwaltung → System → Single-Sign-On</strong>:</p>
+            <ol>
+                <li>Öffnen Sie die SportOase OAuth-App</li>
+                <li>Unter "Beschränkungen → Auf Scopes beschränken" aktivieren Sie:
+                    <ul>
+                        <li>✓ OpenID</li>
+                        <li>✓ E-Mail</li>
+                        <li>✓ Profil</li>
+                        <li>✓ <strong>Rollen</strong> (wichtig!)</li>
+                        <li>✓ <strong>Gruppen</strong> (optional, als Fallback)</li>
+                    </ul>
+                </li>
+                <li>Speichern Sie die Änderungen</li>
+            </ol>
+        </div>
+        
+        <p><a href="/dashboard">← Zurück zum Dashboard</a></p>
+    </body>
+    </html>
+    '''
+
 # Route: Passwort ändern
 @app.route('/change_password', methods=['GET', 'POST'])
 @admin_required
