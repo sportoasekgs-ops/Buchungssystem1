@@ -351,39 +351,100 @@ def oauth_callback():
     
     try:
         token = iserv_client.authorize_access_token()
+        
+        # === AUSFÜHRLICHES DEBUG-LOGGING ===
+        print("=" * 80)
+        print("🔐 ISERV OAUTH CALLBACK - VOLLSTÄNDIGE DEBUG-AUSGABE")
+        print("=" * 80)
+        
+        # Token-Struktur analysieren
+        print("\n📦 TOKEN KEYS:")
+        token_keys = list(token.keys()) if isinstance(token, dict) else []
+        for key in token_keys:
+            print(f"   - {key}")
+        
+        # Prüfe ob roles/groups direkt im Token sind
+        if 'roles' in token:
+            print(f"\n📋 ROLES IM TOKEN: {token['roles']}")
+        if 'groups' in token:
+            print(f"\n👥 GROUPS IM TOKEN: {token['groups']}")
+        
+        # Userinfo aus Token oder separat abrufen
         userinfo = token.get('userinfo')
+        print(f"\n📋 USERINFO AUS TOKEN: {'Ja' if userinfo else 'Nein'}")
         
         if not userinfo:
+            print("   → Rufe userinfo separat ab...")
             userinfo = iserv_client.userinfo(token=token)
+        
+        # Vollständige Userinfo ausgeben
+        print("\n📋 KOMPLETTE USERINFO:")
+        print("-" * 60)
+        if isinstance(userinfo, dict):
+            for key, value in userinfo.items():
+                value_str = str(value)
+                if len(value_str) > 500:
+                    value_str = value_str[:500] + "... [GEKÜRZT]"
+                print(f"   {key}: {value_str}")
+        else:
+            print(f"   (Typ: {type(userinfo)}) {userinfo}")
+        print("-" * 60)
         
         email = userinfo.get('email')
         sub = userinfo.get('sub')
         name = userinfo.get('name', email)
         
+        print(f"\n👤 BENUTZER-DETAILS:")
+        print(f"   E-Mail: {email}")
+        print(f"   Sub-ID: {sub}")
+        print(f"   Name: {name}")
+        
         if not email or not sub:
+            print("❌ FEHLER: E-Mail oder Sub-ID fehlt!")
             flash('Fehler beim Abrufen der Benutzerdaten von IServ.', 'error')
             return redirect(url_for('login'))
+        
+        # Prüfe auch ob Token selbst roles/groups enthält und füge sie zu userinfo hinzu
+        if 'roles' in token and 'roles' not in userinfo:
+            userinfo['roles'] = token['roles']
+            print(f"\n   → Roles aus Token übernommen: {token['roles']}")
+        if 'groups' in token and 'groups' not in userinfo:
+            userinfo['groups'] = token['groups']
+            print(f"\n   → Groups aus Token übernommen: {token['groups']}")
         
         # determine_user_role gibt jetzt (role, iserv_group) zurück
         role, iserv_group = determine_user_role(userinfo)
         
-        # Log OAuth-Daten für Debugging
-        print(f"🔐 IServ Login: {email}")
-        print(f"   Sub-ID: {sub}")
-        print(f"   Rolle: {role}")
+        print(f"\n🎯 ROLLENZUWEISUNG:")
+        print(f"   App-Rolle: {role}")
         print(f"   IServ-Gruppe: {iserv_group}")
-        print(f"   UserInfo: {userinfo}")
+        print("=" * 80)
         
         # Prüfe ob Benutzer Zugang hat (nur Lehrer, Mitarbeitende, Administrator)
         if role is None:
-            flash('Kein Zugang. Nur Lehrer und Mitarbeitende können sich anmelden.', 'error')
-            print(f"❌ Zugang verweigert für: {email} (keine berechtigte Gruppe)")
+            # Zeige detaillierte Fehlermeldung mit Hinweis auf IServ-Konfiguration
+            error_msg = f'Zugang verweigert für {email}. '
+            
+            # Prüfe ob überhaupt roles/groups vorhanden sind
+            has_roles = 'roles' in userinfo and userinfo['roles']
+            has_groups = 'groups' in userinfo and userinfo['groups']
+            
+            if not has_roles and not has_groups:
+                error_msg += 'IServ liefert keine Rollen/Gruppen. Bitte prüfen Sie die OAuth-Konfiguration in IServ (Scopes: roles, groups).'
+                print(f"\n⚠️ WICHTIG: Keine Rollen/Gruppen von IServ erhalten!")
+                print(f"   → Prüfen Sie in IServ unter: Admin → Single-Sign-On → App bearbeiten")
+                print(f"   → Stellen Sie sicher, dass die Scopes 'roles' und 'groups' aktiviert sind!")
+            else:
+                error_msg += 'Keine berechtigte Rolle gefunden. Nur Schulleitung, Lehrer und Mitarbeitende haben Zugang.'
+            
+            flash(error_msg, 'error')
+            print(f"❌ Zugang verweigert für: {email}")
             return redirect(url_for('login'))
         
         # Verwende E-Mail direkt als Username für OAuth-Benutzer
         user = get_or_create_oauth_user(
             email=email,
-            username=email,  # E-Mail als Username (vermeidet Unique-Constraint-Fehler)
+            username=email,
             oauth_provider='iserv',
             oauth_id=sub,
             role=role
@@ -394,7 +455,6 @@ def oauth_callback():
             return redirect(url_for('login'))
         
         # WICHTIG: Session komplett leeren, um OAuth-Token/userinfo zu entfernen
-        # Authlib speichert große Datenmengen in der Session, die das Cookie-Limit überschreiten
         session.clear()
         
         # Nur die wesentlichen Benutzerdaten speichern
@@ -403,11 +463,15 @@ def oauth_callback():
         session['user_email'] = user['email']
         session['user_role'] = user['role']
         
+        print(f"\n✅ LOGIN ERFOLGREICH: {email} → Rolle: {role}")
         flash(f'Willkommen, {name}!', 'success')
         return redirect(url_for('dashboard'))
         
     except Exception as e:
-        print(f"OAuth Fehler: {e}")
+        import traceback
+        print(f"\n❌ OAUTH FEHLER:")
+        print(f"   Exception: {e}")
+        print(f"   Traceback:\n{traceback.format_exc()}")
         flash('Fehler beim IServ-Login. Bitte versuchen Sie es erneut.', 'error')
         return redirect(url_for('login'))
 
