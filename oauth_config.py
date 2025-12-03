@@ -8,29 +8,64 @@ from authlib.integrations.flask_client import OAuth
 
 
 def init_oauth(app):
-    """Initialisiert OAuth2 mit IServ-Konfiguration"""
+    """
+    Initialisiert OAuth2 mit IServ-Konfiguration.
+    
+    Gibt (oauth, iserv_client) zurück, wobei iserv_client None ist,
+    wenn die Konfiguration fehlt.
+    """
     oauth = OAuth(app)
-
-    # IServ-Instanz-Domain aus Umgebungsvariablen
-    iserv_domain = os.environ.get('ISERV_DOMAIN', 'kgs-pattensen.de')
+    
+    # IServ-Konfiguration aus Umgebungsvariablen
+    client_id = os.environ.get('ISERV_CLIENT_ID', '').strip()
+    client_secret = os.environ.get('ISERV_CLIENT_SECRET', '').strip()
+    iserv_domain = os.environ.get('ISERV_DOMAIN', 'kgs-pattensen.de').strip()
+    
+    # Prüfe ob die erforderlichen Secrets vorhanden sind
+    if not client_id or not client_secret:
+        print("=" * 70)
+        print("⚠️  WARNUNG: IServ OAuth ist NICHT konfiguriert!")
+        print("   Fehlende Umgebungsvariablen:")
+        if not client_id:
+            print("   - ISERV_CLIENT_ID")
+        if not client_secret:
+            print("   - ISERV_CLIENT_SECRET")
+        print("")
+        print("   Bitte konfigurieren Sie diese in den Secrets/Environment Variables:")
+        print("   - Auf Render: Dashboard → Environment → Add Environment Variable")
+        print("   - Auf Replit: Secrets-Tab (Schloss-Symbol)")
+        print("=" * 70)
+        return oauth, None
+    
     iserv_base_url = f'https://{iserv_domain}'
+    
+    print("=" * 70)
+    print("✅ IServ OAuth Konfiguration geladen")
+    print(f"   Domain: {iserv_domain}")
+    print(f"   Base URL: {iserv_base_url}")
+    print(f"   Client ID: {client_id[:8]}...{client_id[-4:] if len(client_id) > 12 else ''}")
+    print("=" * 70)
 
     # Registriere IServ als OAuth-Provider
     # Scopes: openid, profile, email, roles UND groups für maximale Kompatibilität
     # IServ-Dokumentation: https://doku.iserv.de/manage/system/sso/
-    iserv = oauth.register(
-        name='iserv',
-        client_id=os.environ.get('ISERV_CLIENT_ID'),
-        client_secret=os.environ.get('ISERV_CLIENT_SECRET'),
-        server_metadata_url=f'{iserv_base_url}/.well-known/openid-configuration',
-        client_kwargs={'scope': 'openid profile email roles groups'})
-
-    return oauth, iserv
+    try:
+        iserv = oauth.register(
+            name='iserv',
+            client_id=client_id,
+            client_secret=client_secret,
+            server_metadata_url=f'{iserv_base_url}/.well-known/openid-configuration',
+            client_kwargs={'scope': 'openid profile email roles groups'}
+        )
+        return oauth, iserv
+    except Exception as e:
+        print(f"❌ Fehler bei OAuth-Registrierung: {e}")
+        return oauth, None
 
 
 def get_admin_email():
     """Gibt die E-Mail-Adresse des Admin-Benutzers zurück"""
-    return 'morelli.maurizio@kgs-pattensen.de'
+    return os.environ.get('ADMIN_EMAIL', 'morelli.maurizio@kgs-pattensen.de')
 
 
 def is_admin_email(email):
@@ -46,7 +81,7 @@ def extract_roles_from_userinfo(userinfo):
     {
         "roles": [
             {"uuid": "...", "id": 123, "name": "Lehrer"},
-            {"uuid": "...", "id": 456, "name": "Mitarbeiter"}
+            {"uuid": "...", "id": 456, "name": "Mitarbeitende"}
         ]
     }
     
@@ -64,8 +99,12 @@ def extract_roles_from_userinfo(userinfo):
                 if isinstance(role_item, dict):
                     # IServ-Format: {"uuid": "...", "id": 123, "name": "Lehrer"}
                     if 'name' in role_item and isinstance(role_item['name'], str):
-                        roles.append(role_item['name'].lower().strip())
+                        role_name = role_item['name'].lower().strip()
+                        roles.append(role_name)
                         print(f"   ✓ Rolle extrahiert: {role_item['name']}")
+                    # Auch 'id' als String prüfen (falls vorhanden)
+                    if 'id' in role_item and isinstance(role_item['id'], str):
+                        roles.append(role_item['id'].lower().strip())
                 elif isinstance(role_item, str):
                     # Fallback: direkter String
                     roles.append(role_item.lower().strip())
@@ -127,11 +166,12 @@ def determine_user_role(userinfo):
     """
     Bestimmt die Rolle des Benutzers basierend auf IServ-ROLLEN und GRUPPEN.
     
-    Regelwerk:
-    1. Admin-E-Mail → admin (immer erlaubt)
-    2. Rolle/Gruppe enthält "Lehrer", "Mitarbeiter", etc. → teacher
-    3. Rolle/Gruppe enthält "Schüler" → KEIN ZUGANG
-    4. Keine passende Rolle/Gruppe → KEIN ZUGANG
+    Unterstützte IServ-Rollen (aus Screenshots):
+    - Schulleitung → teacher (Admin-Rechte nur über E-Mail)
+    - Lehrer → teacher
+    - Mitarbeitende → teacher
+    - Pädagogische Mitarbeiter → teacher
+    - Schüler → KEIN ZUGANG
     
     Args:
         userinfo: Dictionary mit Benutzerdaten von IServ
@@ -185,28 +225,30 @@ def determine_user_role(userinfo):
 
     # 2. Prüfe auf erlaubte Rollen/Gruppen
     # Diese Keywords geben Zugang (EINHEITLICHE RECHTE als 'teacher'):
+    # WICHTIG: Exakte Matches für IServ-Rollen aus den Screenshots
     allowed_keywords = [
-        # Schulleitung
+        # Schulleitung (devsl)
         'schulleitung',
-        # Lehrer
+        # Lehrer (devle)  
         'lehrer',
         'lehrerin',
         'teacher',
+        # Mitarbeitende (devma)
+        'mitarbeitende',
+        'mitarbeiter',
+        'mitarbeiterin',
+        # Pädagogische Mitarbeiter (devpae)
+        'pädagogische mitarbeiter',
+        'paedagogische mitarbeiter',
+        'pädagogischer mitarbeiter',
         # Sozialpädagogen
         'sozialpädagog',
         'sozialpaedagog',
         'sozialpädagogin',
-        # Pädagogische Mitarbeiter
-        'pädagogische mitarbeiter',
-        'paedagogische mitarbeiter',
-        'pädagogischer mitarbeiter',
-        # Mitarbeiter (allgemein)
-        'mitarbeiter',
-        'mitarbeitende',
-        'mitarbeiterin',
-        # Sekretariat
+        # Sekretariat/Verwaltung
         'sekretariat',
         'verwaltung',
+        'admins',
     ]
     
     # Schüler werden blockiert
@@ -239,7 +281,7 @@ def determine_user_role(userinfo):
     if all_memberships:
         print(f"   ❌ KEIN ZUGANG - Keine erlaubte Rolle/Gruppe gefunden")
         print(f"   ℹ️ Gefundene Mitgliedschaften: {all_memberships}")
-        print(f"   ℹ️ Erlaubte Keywords: {allowed_keywords[:5]}... (und weitere)")
+        print(f"   ℹ️ Erlaubte Keywords: {allowed_keywords}")
     else:
         print(f"   ❌ KEIN ZUGANG - Keine Rollen/Gruppen in userinfo gefunden")
         print(f"   ⚠️ HINWEIS: Stellen Sie sicher, dass in IServ Admin → Single-Sign-On")

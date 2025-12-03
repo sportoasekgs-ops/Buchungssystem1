@@ -226,6 +226,9 @@ def index():
     """Startseite - leitet zum Dashboard oder IServ-Login weiter"""
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
+    # Wenn IServ nicht konfiguriert, zeige Login-Seite
+    if not iserv_client:
+        return redirect(url_for('login'))
     return redirect(url_for('login_iserv'))
 
 # Route: Direkter IServ-Embed Login (für iFrame-Integration)
@@ -326,11 +329,17 @@ def login():
 def login_iserv():
     """Startet den IServ OAuth2-Login-Flow"""
     if not iserv_client:
-        flash('IServ-Login ist nicht konfiguriert.', 'error')
+        flash('IServ-Login ist nicht konfiguriert. Bitte ISERV_CLIENT_ID und ISERV_CLIENT_SECRET in den Umgebungsvariablen setzen.', 'error')
         return redirect(url_for('login'))
     
-    redirect_uri = url_for('oauth_callback', _external=True)
-    return iserv_client.authorize_redirect(redirect_uri)
+    try:
+        redirect_uri = url_for('oauth_callback', _external=True)
+        print(f"🔐 IServ OAuth: Starte Login, Redirect URI: {redirect_uri}")
+        return iserv_client.authorize_redirect(redirect_uri)
+    except Exception as e:
+        print(f"❌ IServ OAuth Fehler: {e}")
+        flash(f'Fehler beim Starten des IServ-Logins: {str(e)}', 'error')
+        return redirect(url_for('login'))
 
 # Route: OAuth Callback von IServ
 @app.route('/oauth/callback')
