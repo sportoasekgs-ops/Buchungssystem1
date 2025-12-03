@@ -77,11 +77,11 @@ def extract_roles_from_userinfo(userinfo):
     """
     Extrahiert Rollennamen aus IServ userinfo.
     
-    IServ-Format laut Dokumentation (Scope: roles):
+    IServ-Format (tatsächlich beobachtet):
     {
         "roles": [
-            {"uuid": "...", "id": 123, "name": "Lehrer"},
-            {"uuid": "...", "id": 456, "name": "Mitarbeitende"}
+            {"uuid": "...", "id": "ROLE_SCHOOL_MANAGEMENT", "displayName": "Schulleitung"},
+            {"uuid": "...", "id": "ROLE_USER", "displayName": "Benutzer"}
         ]
     }
     
@@ -89,7 +89,6 @@ def extract_roles_from_userinfo(userinfo):
     """
     roles = []
     
-    # IServ liefert Rollen im Feld "roles" als Liste von Objekten
     if 'roles' in userinfo:
         roles_data = userinfo['roles']
         print(f"   📋 Raw 'roles' data: {roles_data}")
@@ -97,26 +96,31 @@ def extract_roles_from_userinfo(userinfo):
         if isinstance(roles_data, list):
             for role_item in roles_data:
                 if isinstance(role_item, dict):
-                    # IServ-Format: {"uuid": "...", "id": 123, "name": "Lehrer"}
+                    # Extrahiere displayName (bevorzugt)
+                    if 'displayName' in role_item and isinstance(role_item['displayName'], str):
+                        display_name = role_item['displayName'].lower().strip()
+                        roles.append(display_name)
+                        print(f"   ✓ Rolle (displayName): {role_item['displayName']}")
+                    # Auch 'name' prüfen (Fallback)
                     if 'name' in role_item and isinstance(role_item['name'], str):
                         role_name = role_item['name'].lower().strip()
-                        roles.append(role_name)
-                        print(f"   ✓ Rolle extrahiert: {role_item['name']}")
-                    # Auch 'id' als String prüfen (falls vorhanden)
+                        if role_name not in roles:
+                            roles.append(role_name)
+                            print(f"   ✓ Rolle (name): {role_item['name']}")
+                    # Auch 'id' als String prüfen (z.B. ROLE_SCHOOL_MANAGEMENT)
                     if 'id' in role_item and isinstance(role_item['id'], str):
-                        roles.append(role_item['id'].lower().strip())
+                        role_id = role_item['id'].lower().strip()
+                        roles.append(role_id)
+                        print(f"   ✓ Rolle (id): {role_item['id']}")
                 elif isinstance(role_item, str):
-                    # Fallback: direkter String
                     roles.append(role_item.lower().strip())
                     print(f"   ✓ Rolle (String): {role_item}")
         elif isinstance(roles_data, str):
-            # Falls roles ein einzelner String ist
             roles.append(roles_data.lower().strip())
             print(f"   ✓ Rolle (einzelner String): {roles_data}")
     else:
         print(f"   ⚠️ Kein 'roles' Feld in userinfo gefunden")
     
-    # Entferne Duplikate und leere Strings
     return list(set(r for r in roles if r))
 
 
@@ -124,12 +128,11 @@ def extract_groups_from_userinfo(userinfo):
     """
     Extrahiert Gruppennamen aus IServ userinfo.
     
-    IServ-Format laut Dokumentation (Scope: groups):
+    IServ-Format (tatsächlich beobachtet - Dictionary mit IDs als Keys):
     {
-        "groups": [
-            {"id": 123, "uuid": "...", "act": "lehrer", "name": "Lehrer"},
-            {"id": 456, "uuid": "...", "act": "mitarbeiter", "name": "Mitarbeiter"}
-        ]
+        "groups": {
+            "2235": {"id": 2235, "uuid": "...", "act": "schulleitung", "name": "Schulleitung"}
+        }
     }
     
     Gibt eine Liste von Gruppennamen zurück (lowercase).
@@ -140,16 +143,33 @@ def extract_groups_from_userinfo(userinfo):
         groups_data = userinfo['groups']
         print(f"   📋 Raw 'groups' data: {groups_data}")
         
-        if isinstance(groups_data, list):
-            for group_item in groups_data:
+        # IServ sendet groups als Dictionary mit IDs als Keys!
+        if isinstance(groups_data, dict):
+            for group_key, group_item in groups_data.items():
                 if isinstance(group_item, dict):
-                    # IServ-Format: {"id": 123, "uuid": "...", "act": "lehrer", "name": "Lehrer"}
+                    # Extrahiere name
                     if 'name' in group_item and isinstance(group_item['name'], str):
                         groups.append(group_item['name'].lower().strip())
-                        print(f"   ✓ Gruppe extrahiert (name): {group_item['name']}")
+                        print(f"   ✓ Gruppe (name): {group_item['name']}")
+                    # Extrahiere act (z.B. "schulleitung")
+                    if 'act' in group_item and isinstance(group_item['act'], str):
+                        act_value = group_item['act'].lower().strip()
+                        if act_value not in groups:
+                            groups.append(act_value)
+                            print(f"   ✓ Gruppe (act): {group_item['act']}")
+                elif isinstance(group_item, str):
+                    groups.append(group_item.lower().strip())
+                    print(f"   ✓ Gruppe (String value): {group_item}")
+        elif isinstance(groups_data, list):
+            # Fallback für Listen-Format
+            for group_item in groups_data:
+                if isinstance(group_item, dict):
+                    if 'name' in group_item and isinstance(group_item['name'], str):
+                        groups.append(group_item['name'].lower().strip())
+                        print(f"   ✓ Gruppe (name): {group_item['name']}")
                     if 'act' in group_item and isinstance(group_item['act'], str):
                         groups.append(group_item['act'].lower().strip())
-                        print(f"   ✓ Gruppe extrahiert (act): {group_item['act']}")
+                        print(f"   ✓ Gruppe (act): {group_item['act']}")
                 elif isinstance(group_item, str):
                     groups.append(group_item.lower().strip())
                     print(f"   ✓ Gruppe (String): {group_item}")
@@ -225,30 +245,40 @@ def determine_user_role(userinfo):
 
     # 2. Prüfe auf erlaubte Rollen/Gruppen
     # Diese Keywords geben Zugang (EINHEITLICHE RECHTE als 'teacher'):
-    # WICHTIG: Exakte Matches für IServ-Rollen aus den Screenshots
+    # WICHTIG: Enthält sowohl deutsche Namen als auch IServ-Rollen-IDs
     allowed_keywords = [
-        # Schulleitung (devsl)
+        # Schulleitung (devsl) - Name UND IServ-ID
         'schulleitung',
-        # Lehrer (devle)  
+        'role_school_management',
+        'school_management',
+        # Lehrer (devle) - Name UND IServ-ID
         'lehrer',
         'lehrerin',
         'teacher',
-        # Mitarbeitende (devma)
+        'role_teacher',
+        # Mitarbeitende (devma) - Name UND IServ-ID
         'mitarbeitende',
         'mitarbeiter',
         'mitarbeiterin',
-        # Pädagogische Mitarbeiter (devpae)
+        'role_staff',
+        'role_employee',
+        # Pädagogische Mitarbeiter (devpae) - Name UND IServ-ID
         'pädagogische mitarbeiter',
         'paedagogische mitarbeiter',
         'pädagogischer mitarbeiter',
+        'role_educational_staff',
+        'role_pedagogue',
         # Sozialpädagogen
         'sozialpädagog',
         'sozialpaedagog',
         'sozialpädagogin',
+        'role_social_worker',
         # Sekretariat/Verwaltung
         'sekretariat',
         'verwaltung',
         'admins',
+        'role_admin',
+        'role_secretary',
     ]
     
     # Schüler werden blockiert
